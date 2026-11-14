@@ -22,30 +22,32 @@ const ICONS: Record<Exclude<Kind, "loading">, ReactNode> = {
 
 const DURATION = { success: 3500, info: 3500, error: 6000 } as const;
 const MIN_LOADING_MS = 700;
-const MAX = 3;
 
-/** התראות (toasts): הצלחה, שגיאה, מידע וטעינה. נעלמות לבד (חוץ מטעינה), ואפשר לסגור בהקשה. */
+/**
+ * התראות (toasts): הצלחה, שגיאה, מידע וטעינה.
+ * תמיד מוצגת התראה אחת בלבד: התראה חדשה מחליפה את הקודמת (כדי שלא יהיה עומס).
+ * נעלמות לבד (חוץ מטעינה), ואפשר לסגור בהקשה.
+ */
 export function ToastProvider({ children }: { children: ReactNode }) {
-  const [list, setList] = useState<ToastItem[]>([]);
+  const [current, setCurrent] = useState<ToastItem | null>(null);
   const nextId = useRef(1);
-  const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const currentId = useRef<number | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout>>();
 
   const dismiss = useCallback((id: number) => {
-    clearTimeout(timers.current.get(id));
-    timers.current.delete(id);
-    setList((l) => l.filter((t) => t.id !== id));
+    if (currentId.current !== id) return; // כבר הוחלפה בהתראה אחרת
+    clearTimeout(timer.current);
+    currentId.current = null;
+    setCurrent(null);
   }, []);
 
-  const show = useCallback((kind: Kind, text: string): number | null => {
-    let created: number | null = null;
-    setList((l) => {
-      if (l.some((t) => t.text === text)) return l; // לא מציגים את אותה הודעה פעמיים במקביל
-      const id = nextId.current++;
-      created = id;
-      if (kind !== "loading") timers.current.set(id, setTimeout(() => dismiss(id), DURATION[kind]));
-      return [...l, { id, kind, text }].slice(-MAX);
-    });
-    return created;
+  const show = useCallback((kind: Kind, text: string): number => {
+    const id = nextId.current++;
+    clearTimeout(timer.current);
+    currentId.current = id;
+    setCurrent({ id, kind, text });
+    if (kind !== "loading") timer.current = setTimeout(() => dismiss(id), DURATION[kind]);
+    return id;
   }, [dismiss]);
 
   const api = useMemo<Api>(() => ({
@@ -56,7 +58,6 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       const started = Date.now();
       const id = show("loading", text);
       return () => {
-        if (id === null) return;
         const wait = Math.max(0, MIN_LOADING_MS - (Date.now() - started));
         setTimeout(() => dismiss(id), wait);
       };
@@ -67,18 +68,18 @@ export function ToastProvider({ children }: { children: ReactNode }) {
     <Ctx.Provider value={api}>
       {children}
       <div className="toasts" aria-live="polite">
-        {list.map((t) => (
-          <button key={t.id} type="button" className={`toast ${t.kind}`} onClick={() => dismiss(t.id)} role={t.kind === "error" ? "alert" : "status"}>
-            {t.kind === "loading" ? (
-              <BenchLoader size={22} label={t.text} />
+        {current && (
+          <button key={current.id} type="button" className={`toast ${current.kind}`} onClick={() => dismiss(current.id)} role={current.kind === "error" ? "alert" : "status"}>
+            {current.kind === "loading" ? (
+              <BenchLoader size={22} label={current.text} />
             ) : (
               <span className="toast-ico" aria-hidden="true">
-                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">{ICONS[t.kind]}</svg>
+                <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">{ICONS[current.kind]}</svg>
               </span>
             )}
-            <span>{t.text}</span>
+            <span>{current.text}</span>
           </button>
-        ))}
+        )}
       </div>
     </Ctx.Provider>
   );

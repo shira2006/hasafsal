@@ -7,7 +7,7 @@ import FloatingMenu from "./components/FloatingMenu";
 import AboutPage from "./components/AboutPage";
 import { useToasts } from "./components/Toasts";
 import { friendlyError } from "./lib/errors";
-import { useDelayedFlag, useGeolocation, useView, type LatLng } from "./hooks";
+import { useGeolocation, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
@@ -33,9 +33,6 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false);
   const [lookingUp, setLookingUp] = useState(false); // מחפשים כתובת למיקום הנבחר
-  const showLoading = useDelayedFlag(loadingItems, 400);
-  const [loadedOnce, setLoadedOnce] = useState(false); // הטעינה הראשונה הסתיימה
-  const lastEmptyNotice = useRef(0); // מתי הוצגה ההודעה "אין ספסלים באזור" (כדי לא להציק בכל הזזה של המפה)
   const viewRef = useRef(view);
   viewRef.current = view;
   const boundsRef = useRef<Bounds | null>(null);
@@ -49,19 +46,15 @@ export default function App() {
   useEffect(() => {
     if (!bounds) return;
     let cancelled = false; // תשובה ישנה לא דורסת תשובה חדשה יותר
+    setLoadingItems(true); // מיד כשהמפה זזה: "מחפשים ספסלים באזור..."
     const t = setTimeout(async () => {
-      setLoadingItems(true);
       try {
         const list = await fetchItemsInBounds(bounds);
         if (cancelled) return;
         setItems(new Map(list.map((i) => [i.id, i])));
-        setLoadedOnce(true);
         setLoadingItems(false);
-        // אין ספסלים באזור שמוצג: אומרים את זה, כדי שיהיה ברור שהמפה לא תקועה
-        if (list.length === 0 && viewRef.current === "map" && Date.now() - lastEmptyNotice.current > 20000) {
-          lastEmptyNotice.current = Date.now();
-          toast.info("לא מצאנו ספסלים באזור הזה. אפשר להזיז את המפה, או להוסיף ספסל");
-        }
+        // נמצאו ספסלים: ההתראה פשוט נעלמת. לא נמצאו: אומרים את זה (כדי שיהיה ברור שהמפה לא תקועה)
+        if (list.length === 0 && viewRef.current === "map") toast.info("לא נמצאו ספסלים באזור זה");
       } catch (e) {
         if (cancelled) return;
         setLoadingItems(false);
@@ -71,12 +64,12 @@ export default function App() {
     return () => { cancelled = true; clearTimeout(t); };
   }, [bounds, refreshKey, toast]);
 
-  // התראת "טוענים ספסלים...": תמיד בטעינה הראשונה, ובהמשך רק אם הטעינה מתארכת (כדי שלא תהבהב בכל הזזה של המפה)
-  const wantLoadingToast = loadingItems && (!loadedOnce || showLoading);
+  // התראת "מחפשים ספסלים באזור...": בכל הזזה של המפה, עד שהתשובה מגיעה (מוצגת לפחות רגע, כדי שלא תהבהב)
+  const searchingBenches = loadingItems && view === "map";
   useEffect(() => {
-    if (!wantLoadingToast) return;
-    return toast.loading("טוענים ספסלים...");
-  }, [wantLoadingToast, toast]);
+    if (!searchingBenches) return;
+    return toast.loading("מחפשים ספסלים באזור...");
+  }, [searchingBenches, toast]);
 
   // התראת "מחפשים את המיקום שלך...": עד שהמיקום מתקבל. לא נשארת לנצח אם המשתמש לא ענה על בקשת ההרשאה.
   useEffect(() => {
