@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { shrinkImage } from "../lib/image";
 import { friendlyError } from "../lib/errors";
 import BenchLoader from "./BenchLoader";
+import PhotoPicker from "./PhotoPicker";
 
 interface Props {
   debugInfo?: string; // לפיתוח בלבד: קואורדינטות, דיוק ומקור המיקום
@@ -16,30 +17,6 @@ interface Props {
   onStartDrag: () => void;
   onClose: () => void;
   onError: (msg: string) => void;
-}
-
-const CameraIcon = () => (
-  <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-    <path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" />
-  </svg>
-);
-
-/**
- * כפתור אחד לכל המכשירים. בטלפון, בלי capture, המערכת עצמה מציגה את הבחירה הרגילה (מצלמה או גלריה).
- * במחשב נפתח חלון בחירת קובץ.
- */
-function PhotoButton({ replacing, onFile }: { replacing: boolean; onFile: (f?: File) => void }) {
-  const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    e.target.value = ""; // כדי שאפשר יהיה לבחור שוב את אותו קובץ
-    onFile(f);
-  };
-  return (
-    <label className="btn small yellow">
-      <CameraIcon /> {replacing ? "החלפת תמונה" : "הוספת תמונה"}
-      <input type="file" accept="image/*" hidden onChange={pick} />
-    </label>
-  );
 }
 
 export default function AddSheet({ debugInfo, locationLabel, resolving, isCurrent, isMapPick, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
@@ -112,7 +89,7 @@ export default function AddSheet({ debugInfo, locationLabel, resolving, isCurren
         <span className="label">תמונה</span>
         {preview && <img className="preview" src={preview} alt="תצוגה מקדימה" />}
         <div className="row photo-actions">
-          <PhotoButton replacing={!!preview} onFile={onFile} />
+          <PhotoPicker replacing={!!preview} onFile={onFile} />
           {preview && <button type="button" className="btn small" onClick={removePhoto}>הסרה</button>}
         </div>
       </div>
