@@ -134,7 +134,7 @@ export default function ItemSheet({ item, me, onTook, onMissing, onClose }: Prop
         <div className="card loc-card">
           <p className="address">{address ?? (addressLoading ? <BenchLoader size={22} label="מחפשים כתובת" /> : "הכתובת לא זמינה")}</p>
           <a
-            className="btn secondary small"
+            className="btn yellow small"
             target="_blank"
             rel="noopener noreferrer"
             href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
@@ -146,10 +146,10 @@ export default function ItemSheet({ item, me, onTook, onMissing, onClose }: Prop
 
       {/* "לקחתי": הפעולה המרכזית. לצדה "זה לא כאן" (הפריט כבר לא שם). צמודות לתחתית */}
       <div className="actions">
-        <button className="btn took" disabled={busy} onClick={() => run(onTook)}>
+        <button className="btn took green" disabled={busy} onClick={() => run(onTook)}>
           לקחתי ✔
         </button>
-        <button className="btn missing" disabled={busy} onClick={() => run(onMissing)}>
+        <button className="btn missing red" disabled={busy} onClick={() => run(onMissing)}>
           <SadFace /> זה לא כאן
         </button>
       </div>

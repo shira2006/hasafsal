@@ -35,7 +35,7 @@ function PhotoButton({ replacing, onFile }: { replacing: boolean; onFile: (f?: F
     onFile(f);
   };
   return (
-    <label className="btn small secondary">
+    <label className="btn small yellow">
       <CameraIcon /> {replacing ? "החלפת תמונה" : "הוספת תמונה"}
       <input type="file" accept="image/*" hidden onChange={pick} />
     </label>
@@ -100,7 +100,7 @@ export default function AddSheet({ debugInfo, locationLabel, resolving, isCurren
       <div className="sheet-head">
         <h2>הוספת מיקום לספסל</h2>
         <div className="head-actions">
-          <button className="btn small" disabled={!canPublish} onClick={publish}>
+          <button className="btn small green" disabled={!canPublish} onClick={publish}>
             {busy ? <><BenchLoader size={16} label="מעלים" /> מעלים...</> : "פרסום"}
           </button>
           <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
