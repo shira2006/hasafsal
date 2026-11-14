@@ -1,4 +1,4 @@
-const CACHE = "hasafsal-v1";
+const CACHE = "hasafsal-v2";
 const SHELL = ["./", "index.html", "style.css", "app.js", "auth.js", "config.js", "manifest.webmanifest", "icons/icon-192.png"];
 
 self.addEventListener("install", (e) => {

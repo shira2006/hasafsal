@@ -90,7 +90,7 @@
     const it = items.get(current); if (!it) return;
     $("item-took").disabled = true;
     try { await store.remove(it); removeMarker(it.id); toast("תודה! הפריט הוסר מהמפה"); }
-    catch (e) { console.error(e); toast("לא הצלחנו להסיר, נסו שוב"); }
+    catch (e) { console.error(e); toast("שגיאה בהסרה: " + (e.message || e)); }
     $("item-took").disabled = false;
   };
 
@@ -121,7 +121,7 @@
       await store.add({ blob, description: $("add-desc").value.trim(), lat, lng });
       closeSheets(); toast("הפריט פורסם!");
       if (!live) refresh();
-    } catch (e) { console.error(e); toast("שגיאה בפרסום, נסו שוב"); }
+    } catch (e) { console.error(e); toast("שגיאה בפרסום: " + (e.message || e.error_description || e)); }
     $("add-submit").textContent = "פרסום";
   };
 
@@ -161,7 +161,7 @@
   // ---------- טעינה ----------
   async function refresh() {
     try { (await store.list()).forEach(addMarker); }
-    catch (e) { console.error(e); toast("שגיאה בטעינת הפריטים"); }
+    catch (e) { console.error(e); toast("שגיאה בטעינה: " + (e.message || e)); }
   }
   refresh();
   store.subscribe(addMarker, removeMarker);
