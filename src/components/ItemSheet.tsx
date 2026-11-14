@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { Item } from "../types";
 import type { LatLng } from "../hooks";
 import { distanceMeters, formatDistance } from "../lib/geo";
@@ -26,6 +26,27 @@ function ItemPhoto({ item }: { item: Item }) {
   return <img className="photo" src={item.photo_url} alt="תמונת הפריט" onError={() => setBroken(true)} />;
 }
 
+/** תיאור: מקוצר לכמה שורות עם "קראו עוד", כדי שהגיליון לא יצטרך לגלול. */
+function Description({ text }: { text: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const [expanded, setExpanded] = useState(false);
+  const [clamped, setClamped] = useState(false);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (el && !expanded) setClamped(el.scrollHeight > el.clientHeight + 1);
+  }, [text, expanded]);
+  return (
+    <>
+      <p ref={ref} className={`description${expanded ? "" : " clamp"}`}>{text}</p>
+      {(clamped || expanded) && (
+        <button type="button" className="link-btn" onClick={() => setExpanded((e) => !e)}>
+          {expanded ? "הצגת פחות" : "קראו עוד"}
+        </button>
+      )}
+    </>
+  );
+}
+
 // כתובות שכבר חיפשנו (לפריטים ישנים ששמורים בלי כתובת), כדי לא לפנות לשירות שוב ושוב
 const looked = new Map<string, string | null>();
 
@@ -49,36 +70,39 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
   const address = useAddress(item);
   const distance = me ? formatDistance(distanceMeters(me, [item.lat, item.lng])) : null;
   const when = new Date(item.created_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
+  // בפריטים ישנים שנשמרה בהם הערת מיקום נפרדת, היא מוצגת כהמשך התיאור
+  const text = [item.description, item.location_note].filter(Boolean).join("\n") || "ללא תיאור";
 
   return (
     <div className="sheet item-sheet">
-      {/* סגירה: בשורה משלה, מחוץ לתמונה, כדי שלא ייראה כמחיקה שלה */}
-      <div className="sheet-head end">
+      {/* שורה עליונה: מתי פורסם (בצד ימין), וסגירה (בצד שמאל). ה-X מחוץ לתמונה, כדי שלא ייראה כמחיקה שלה */}
+      <div className="sheet-head">
+        <span className="posted">פורסם {when}</span>
         <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
       </div>
 
       <ItemPhoto key={item.id} item={item} />
 
-      {/* תיאור: פסקה אחת על רקע לבן. (בפריטים ישנים שנשמרה בהם הערת מיקום נפרדת, היא מוצגת כהמשך הפסקה.) */}
-      <div className="card item-info">
-        <p className="description">{[item.description, item.location_note].filter(Boolean).join("\n") || "ללא תיאור"}</p>
-        <p className="meta">פורסם {when}</p>
+      <div className="field">
+        <span className="label">תיאור</span>
+        <div className="card"><Description key={item.id} text={text} /></div>
       </div>
 
-      {/* מיקום: כתובת, מרחק, וניווט לשם */}
-      <div className="card loc-card">
+      <div className="field">
         <span className="label">מיקום</span>
-        <p className="address">{address ?? " "}</p>
-        <div className="nav-row">
-          <span className="dist">{distance ? `${distance} ממך` : ""}</span>
-          <a
-            className="btn secondary small"
-            target="_blank"
-            rel="noopener noreferrer"
-            href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
-          >
-            ניווט לשם
-          </a>
+        <div className="card loc-card">
+          <p className="address">{address ?? " "}</p>
+          <div className="nav-row">
+            <span className="dist">{distance ? `${distance} ממך` : ""}</span>
+            <a
+              className="btn secondary small"
+              target="_blank"
+              rel="noopener noreferrer"
+              href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
+            >
+              ניווט לשם
+            </a>
+          </div>
         </div>
       </div>
 

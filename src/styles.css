@@ -88,21 +88,30 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .sheet-head .close { position: static; flex-shrink: 0; }
 
 /* גיליון פריט: הפעולות צמודות לתחתית (גם כשצריך לגלול), ו"לקחתי" הוא הכפתור המרכזי */
-.item-sheet { padding-bottom: 0; max-height: 82%; }
-.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); box-shadow: 0 -8px 10px -8px rgba(59, 74, 82, .3); }
+.item-sheet { padding-top: 14px; padding-bottom: 0; max-height: 90%; gap: 8px; }
+.item-sheet img.photo { max-height: 22vh; }
+.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); }
 .btn.took { flex: none; padding: 15px 18px; font-size: 19px; }
 /* בלי תמונה: הודעה במקום ציור */
-.no-photo { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px; background: var(--soft); border-radius: var(--radius); text-align: center; font-size: 17px; }
-.sheet .no-photo img { width: auto; height: 70px; max-height: none; aspect-ratio: auto; border: 0; border-radius: 0; background: none; }
+.no-photo { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px; background: var(--soft); border-radius: var(--radius); text-align: center; font-size: 17px; }
+.sheet .no-photo img { width: auto; height: 56px; max-height: none; aspect-ratio: auto; border: 0; border-radius: 0; background: none; }
 .sheet img.photo { border: 0; }
-.card { background: #fff; border-radius: var(--radius); padding: 12px 14px; }
-.item-info { display: flex; flex-direction: column; gap: 8px; }
+.card { background: #fff; border: var(--line); border-radius: var(--radius); padding: 12px 14px; }
+.posted { font-size: 14px; color: var(--ink-soft); }
+/* "קראו עוד": התיאור מקוצר לכמה שורות, והגיליון לא צריך לגלול */
+.card { display: flex; flex-direction: column; gap: 6px; }
+.description.clamp { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
+/* מסכים נמוכים: מקצרים עוד, ובלי ציור הספסל, כדי שהגיליון לא יצטרך לגלול */
+@media (max-height: 700px) and (max-width: 899px) {
+  .description.clamp { -webkit-line-clamp: 2; }
+  .sheet .no-photo img { display: none; }
+  .item-sheet .actions { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
+}
+.link-btn { align-self: flex-start; background: none; border: 0; padding: 0; font-size: 15px; text-decoration: underline; color: var(--ink); cursor: pointer; }
 /* תיאור הפריט: פסקה (לא כותרת). שומרת על ירידות שורה שכתב המפרסם, וגם שוברת מילים ארוכות מאוד */
-.item-info .description { font-size: 17px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
-.sheet-head.end { justify-content: flex-end; }
+.card .description { margin: 0; font-size: 17px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
 /* אזור ניווט */
 .loc-card { display: flex; flex-direction: column; gap: 6px; }
-.loc-card .label { font-size: 17px; }
 .loc-card .address { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
 .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .nav-row .dist { font-size: 15px; color: var(--ink-soft); }
