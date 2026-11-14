@@ -8,7 +8,7 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - Add flow ("מצאת ספסל?"): photo (optional), one description (items + where exactly), location (default current location; type an address, or choose on the map). A photo or a description is required.
 - "הצעות לחידושים" page (`#/about`; navbar tab + page title) with a short story and a suggestions form (stored in the `suggestions` table in Supabase, no email/notification; readable only in Supabase Studio, not through the public API).
 - Item view also has "זה לא כאן" (drawn sad-face SVG) next to "לקחתי": removes the item for everyone, like "לקחתי", with a different message.
-- On touch devices the add flow offers separate camera ("צילום", `capture`) and gallery buttons; on desktop one button.
+- Add flow has ONE photo button ("הוספת תמונה", camera icon, no `capture`): the phone shows its own camera/gallery chooser. Item photos that do not load within 8s fall back to the "no photo" note.
 - PWA/install look: manifest + `<meta theme-color>` use the cream colour (#ffefd6); icons in `public/icons` are generated from the logo with `tools/make-icons.cjs` (not part of the build). `index.html` contains an inline bench-drawing loader shown until React mounts (replaced by the app).
 - All UI text is Hebrew, RTL. Tone: friendly, neighbourly. No emoji as UI icons (use SVG).
 
