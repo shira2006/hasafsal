@@ -26,6 +26,7 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
         onError={(e) => { if (!e.currentTarget.src.endsWith(noPhoto)) e.currentTarget.src = noPhoto; }}
       />
       <h2>{item.description || "ללא תיאור"}</h2>
+      {item.location_note && <p className="note"><span className="label">איך מוצאים אותו</span>{item.location_note}</p>}
       <p className="meta">פורסם {when}{d}</p>
       <div className="row">
         <a

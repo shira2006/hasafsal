@@ -5,6 +5,7 @@ export interface Item {
   description: string | null;
   photo_url: string | null;
   photo_path: string | null;
+  location_note: string | null;
   created_at: string;
 }
 

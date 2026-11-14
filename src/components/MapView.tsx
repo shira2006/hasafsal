@@ -6,7 +6,8 @@ import type { LatLng } from "../hooks";
 
 const DEFAULT_CENTER: LatLng = [32.0853, 34.7818]; // תל אביב, עד שנמצא מיקום
 
-// סמן הפריט: לב קטן בציור יד (קהילה ונתינה), בלי עיגול. הקצה התחתון של הלב מצביע על המיקום.
+// סמן הפריט: לב ורוד (קהילה ונתינה), בלי עיגול ובלי מסגרת שחורה. הקצה התחתון של הלב מצביע על המיקום.
+// הגודל מתאים את עצמו לרמת הזום (משתנה CSS --pin-scale), כדי שהלבבות לא יציפו את המפה כשמרחיקים.
 const HEART = '<svg viewBox="0 0 32 30" width="34" height="32" aria-hidden="true"><path d="M16 28.5C6 20.5 2 14.5 2 9.2 2 4.8 5.4 2 9.4 2c3 0 5.5 1.7 6.6 4.5C17.1 3.7 19.6 2 22.6 2 26.6 2 30 4.8 30 9.2c0 5.3-4 11.3-14 19.3Z"/></svg>';
 const heartIcon = (cls: string) => L.divIcon({ className: "", html: `<div class="pin ${cls}">${HEART}</div>`, iconSize: [34, 32], iconAnchor: [17, 30] });
 const pinIcon = heartIcon("");
@@ -22,6 +23,24 @@ function Events({ onBounds }: { onBounds: (b: Bounds) => void }) {
   };
   useMapEvents({ moveend: emit });
   useEffect(emit, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
+/** מעדכן את גודל הלבבות לפי רמת הזום: 1 בזום 17, קטן יותר כשמרחיקים, מעט גדול יותר כשמקרבים. */
+function PinScale() {
+  const map = useMap();
+  const apply = () => {
+    const s = Math.min(1.15, Math.max(0.4, 1 - (17 - map.getZoom()) * 0.15));
+    map.getContainer().style.setProperty("--pin-scale", String(s));
+  };
+  useMapEvents({ zoom: apply });
+  useEffect(apply, []); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
+
+/** במצב גרירה אפשר גם להקיש על המפה כדי להניח את הלב במקום. */
+function TapToPlace({ active, onPlace }: { active: boolean; onPlace: (p: LatLng) => void }) {
+  useMapEvents({ click: (e) => { if (active) onPlace([e.latlng.lat, e.latlng.lng]); } });
   return null;
 }
 
@@ -75,12 +94,13 @@ interface Props {
   pick: LatLng | null;
   selectedId: string | null;
   focus: Focus | null;
+  dragMode: boolean;
   onPickMove: (p: LatLng) => void;
   onSelect: (id: string) => void;
   onBounds: (b: Bounds) => void;
 }
 
-export default function MapView({ items, me, recenter, pick, selectedId, focus, onPickMove, onSelect, onBounds }: Props) {
+export default function MapView({ items, me, recenter, pick, selectedId, focus, dragMode, onPickMove, onSelect, onBounds }: Props) {
   const pickHandlers = useMemo(
     () => ({ dragend: (e: L.LeafletEvent) => { const l = (e.target as L.Marker).getLatLng(); onPickMove([l.lat, l.lng]); } }),
     [onPickMove]
@@ -90,13 +110,15 @@ export default function MapView({ items, me, recenter, pick, selectedId, focus, 
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} attribution="© OpenStreetMap" />
       <Events onBounds={onBounds} />
       <ResizeWatcher />
+      <PinScale />
+      <TapToPlace active={dragMode && !!pick} onPlace={onPickMove} />
       <FocusOn focus={focus} />
       <Recenter me={me} trigger={recenter} />
       {me && <Marker position={me} icon={meIcon} interactive={false} />}
       {items.map((it) => (
         <Marker key={it.id} position={[it.lat, it.lng]} icon={it.id === selectedId ? pinIconSelected : pinIcon} eventHandlers={{ click: () => onSelect(it.id) }} />
       ))}
-      {pick && <Marker position={pick} icon={pinIconPick} draggable eventHandlers={pickHandlers} zIndexOffset={1000} />}
+      {pick && <Marker position={pick} icon={pinIconPick} draggable={dragMode} eventHandlers={pickHandlers} zIndexOffset={1000} />}
     </MapContainer>
   );
 }

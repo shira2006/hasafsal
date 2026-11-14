@@ -10,7 +10,8 @@ import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./li
 import { geocode } from "./lib/geocode";
 import type { Bounds, Item } from "./types";
 
-const errText = (e: unknown) => (e instanceof Error ? e.message : (e as { message?: string })?.message ?? String(e));
+const CURRENT_LABEL = "המיקום הנוכחי";
+const errText =(e: unknown) => (e instanceof Error ? e.message : (e as { message?: string })?.message ?? String(e));
 
 export default function App() {
   const [toast, setToast] = useToast();
@@ -21,6 +22,7 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pick, setPick] = useState<LatLng | null>(null);
   const [pickLabel, setPickLabel] = useState("");
+  const [dragging, setDragging] = useState(false); // מצב גרירה: אפשר להזיז את הלב על המפה
   const [focus, setFocus] = useState<Focus | null>(null);
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -72,16 +74,18 @@ export default function App() {
   const selected = selectedId ? items.get(selectedId) ?? null : null;
 
   async function took(item: Item) {
-    try { await removeItem(item); setSelectedId(null); setToast("תודה! הפריט הוסר מהמפה"); }
+    try { await removeItem(item); setSelectedId(null); setToast("תודה! עדכנו את המפה"); }
     catch (e) { setToast("שגיאה בהסרה: " + errText(e)); }
   }
 
-  async function publish(p: { blob: Blob | null; description: string }) {
+  function closeAdd() { setPick(null); setDragging(false); }
+
+  async function publish(p: { blob: Blob | null; description: string; locationNote: string }) {
     if (!pick) return;
     try {
       await createItem({ ...p, lat: pick[0], lng: pick[1] });
-      setPick(null);
-      setToast("הפריט פורסם!");
+      closeAdd();
+      setToast("תודה! הפריט עלה למפה");
     } catch (e) { setToast("שגיאה בפרסום: " + errText(e)); }
   }
 
@@ -94,7 +98,7 @@ export default function App() {
     const start = me ?? center;
     if (!start) return;
     setPick(start);
-    setPickLabel(me ? "המיקום הנוכחי שלי" : "מרכז המפה");
+    setPickLabel(me ? CURRENT_LABEL : "מרכז המפה");
     focusOn(start);
   }
 
@@ -109,17 +113,17 @@ export default function App() {
     return true;
   }
 
-  function useMyLocation() {
+  function backToCurrentLocation() {
     if (!me) return;
     setPick(me);
-    setPickLabel("המיקום הנוכחי שלי");
+    setPickLabel(CURRENT_LABEL);
     focusOn(me);
   }
 
   return (
     <div className="app">
       <Navbar view={view} />
-      <div className={`stage${selected || pick ? " has-sheet" : ""}`}>
+      <div className={`stage${selected || pick ? " has-sheet" : ""}${dragging ? " dragging" : ""}`}>
         {/* הדף מוצג מעל המפה (והמפה נשארת טעונה), כדי שהמיקום והזום לא יאבדו */}
         {view === "about" && <AboutPage />}
         <div className="map-area">
@@ -130,9 +134,10 @@ export default function App() {
             pick={pick}
             selectedId={selectedId}
             focus={focus}
+            dragMode={dragging}
             onPickMove={onPickMove}
             onSelect={(id) => {
-              setPick(null);
+              closeAdd();
               setSelectedId(id);
               const it = items.get(id);
               if (it) focusOn([it.lat, it.lng]);
@@ -144,16 +149,24 @@ export default function App() {
             onAdd={startAdd}
             onRecenter={() => (me ? setRecenter((n) => n + 1) : setToast("מחפשים מיקום..."))}
           />
+          {dragging && (
+            <div className="drag-bar" role="status">
+              <span>גוררים את הלב, או מקישים על המפה, למקום המדויק</span>
+              <button className="btn small" onClick={() => setDragging(false)}>אישור מיקום</button>
+            </div>
+          )}
         </div>
         {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
         {pick && (
           <AddSheet
             locationLabel={pickLabel}
+            isCurrent={pickLabel === CURRENT_LABEL}
             canUseMyLocation={!!me}
             onSubmit={publish}
             onSearch={searchAddress}
-            onUseMyLocation={useMyLocation}
-            onClose={() => setPick(null)}
+            onUseMyLocation={backToCurrentLocation}
+            onStartDrag={() => setDragging(true)}
+            onClose={closeAdd}
             onError={setToast}
           />
         )}

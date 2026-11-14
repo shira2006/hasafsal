@@ -4,15 +4,16 @@ interface Props {
   view: "map" | "about";
 }
 
-/** סרגל עליון: לוגו (ספסל בעיפרון עם המילה "הספסל") וקישור ל"המשימה שלנו". הניווט הוא לפי hash. */
+/** סרגל עליון: לוגו, מפה, המשימה שלנו. העמוד הנוכחי מודגש. הניווט הוא לפי hash. */
 export default function Navbar({ view }: Props) {
   return (
     <header className="navbar">
-      <a href="#/" aria-label="הספסל, למפה"><img className="logo" src={logo} alt="הספסל" /></a>
+      <a className="logo-link" href="#/" aria-label="הספסל, למפה"><img className="logo" src={logo} alt="הספסל" /></a>
       <span className="spacer" />
-      {view === "about"
-        ? <a className="pill" href="#/">חזרה למפה</a>
-        : <a className="pill" href="#/about">המשימה שלנו</a>}
+      <nav className="tabs" aria-label="ניווט ראשי">
+        <a href="#/" aria-current={view === "map" ? "page" : undefined}>מפה</a>
+        <a href="#/about" aria-current={view === "about" ? "page" : undefined}>המשימה שלנו</a>
+      </nav>
     </header>
   );
 }
