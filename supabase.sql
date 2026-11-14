@@ -34,3 +34,6 @@ create policy "photos delete" on storage.objects for delete using (bucket_id = '
 -- הרשאות לטבלה (בפרויקטים חדשים ב-Supabase זה לא ניתן אוטומטית; בלי זה מקבלים 401 / permission denied)
 grant usage on schema public to anon, authenticated;
 grant select, insert, delete on public.items to anon, authenticated;
+
+-- אינדקס לטעינת פריטים לפי אזור במפה
+create index if not exists items_lat_lng_idx on public.items (lat, lng);

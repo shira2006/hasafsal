@@ -1,62 +1,19 @@
 <!doctype html>
 <html lang="he" dir="rtl">
-<head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>הספסל</title>
-  <meta name="theme-color" content="#16a34a">
-  <link rel="manifest" href="manifest.webmanifest">
-  <link rel="icon" href="icons/icon-192.png">
-  <link rel="apple-touch-icon" href="icons/icon-192.png">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="הספסל">
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-  <header>
-    <h1>🪑 הספסל</h1>
-    <span id="mode"></span>
-  </header>
-
-  <div id="map"></div>
-
-  <button id="locate" aria-label="המיקום שלי">📍</button>
-  <button id="add">＋ פרסום פריט</button>
-
-  <!-- כרטיס פריט -->
-  <div id="sheet-item" class="sheet hidden">
-    <button class="close" data-close>✕</button>
-    <img id="item-photo" alt="תמונת הפריט">
-    <p id="item-desc"></p>
-    <p id="item-meta" class="meta"></p>
-    <div class="row">
-      <a id="item-nav" class="btn secondary" target="_blank" rel="noopener">ניווט</a>
-      <button id="item-took" class="btn primary">לקחתי ✔</button>
-    </div>
-  </div>
-
-  <!-- פרסום פריט -->
-  <div id="sheet-add" class="sheet hidden">
-    <button class="close" data-close>✕</button>
-    <h2>פרסום פריט</h2>
-    <label class="btn secondary file">
-      📷 צילום / בחירת תמונה
-      <input id="add-file" type="file" accept="image/*" capture="environment" hidden>
-    </label>
-    <img id="add-preview" class="hidden" alt="תצוגה מקדימה">
-    <textarea id="add-desc" rows="2" placeholder="תיאור (לא חובה): למשל כיסא עץ במצב טוב"></textarea>
-    <p class="meta" id="add-loc">הפריט יסומן במיקום שלך. אפשר לגרור את הסמן במפה לתיקון.</p>
-    <button id="add-submit" class="btn primary" disabled>פרסום</button>
-  </div>
-
-  <div id="toast" class="hidden"></div>
-
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js"></script>
-  <script src="auth.js"></script>
-  <script src="app.js"></script>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>הספסל</title>
+    <meta name="theme-color" content="#16a34a" />
+    <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <link rel="icon" href="%BASE_URL%icons/icon-192.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%icons/icon-192.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="הספסל" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>
