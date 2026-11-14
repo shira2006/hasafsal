@@ -7,8 +7,8 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - Item view: photo (tap = full-size modal), description, location card (address, distance, "ניווט לשם"), and the main action "לקחתי" (deletes the item for everyone via Realtime).
 - Add flow ("מצאת ספסל?"): photo (optional), one description (items + where exactly), location (default current location; type an address, or choose on the map). A photo or a description is required.
 - "הצעות לחידושים" page (`#/about`; navbar tab + page title) with a short story and a suggestions form (stored in the `suggestions` table in Supabase, no email/notification; readable only in Supabase Studio, not through the public API).
-- Item view also has "זה לא כאן" (drawn sad-face SVG) next to "לקחתי": removes the item for everyone, like "לקחתי", with a different message.
-- Add flow has ONE photo button ("הוספת תמונה", camera icon, no `capture`): the phone shows its own camera/gallery chooser. Loader shows only while a real photo is loading; no photo = bench drawing + note immediately.
+- Item view has three actions: "לקחתי" (asks "נשאר משהו על הספסל?": no = bench removed; yes = update sheet), "הוספתי לספסל" (update sheet right away, bench stays) and "זה לא כאן" (drawn sad face; removes the bench). Benches are NOT permanent entities. The update sheet keeps the same location/address and REPLACES the bench: `replaceItem()` in `src/lib/items.ts` inserts the new row first, then deletes the old row (and its photo file unless reused). After "לקחתי" the update starts without the old photo; after "הוספתי" the old photo is kept until replaced. No DB change is needed for this.
+- Photo picking (`PhotoPicker`): the main button "הוספת תמונה" (camera icon) opens the camera directly (`capture=environment`, because Android's plain file input often shows only the gallery); on touch devices a small "או בחירה מהגלריה" link opens the gallery. Loader shows only while a real photo is loading; no photo = bench drawing + note immediately.
 - PWA/install look: manifest + `<meta theme-color>` use the cream colour (#ffefd6); icons in `public/icons` are generated from the logo with `tools/make-icons.cjs` (not part of the build). `index.html` contains an inline bench-drawing loader shown until React mounts (replaced by the app).
 - All UI text is Hebrew, RTL. Tone: friendly, neighbourly. No emoji as UI icons (use SVG).
 
@@ -34,6 +34,7 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - dev = local only (Supabase CLI + Docker). Production = GitHub Pages (GitHub Actions) + one cloud Supabase project.
 - Env values go in `.env.local` (gitignored). `.env.example` is only a template: never put real values in it. `.env.production` holds the public publishable key. Never put secret/service_role keys in the repo.
 - Local analytics (Logflare) is disabled in `config.toml` (fails its health check on Windows).
+- Production URL: https://www.hasafsal.net (GitHub Pages custom domain, base "/"). Dev server: http://localhost:5173/ .
 - Dev-only helpers (not in production builds): `?mockLoc=lat,lng[,accuracyMeters]` fakes the GPS position; a small `dev:` line under the location field shows pin/GPS coordinates.
 
 ## Commands
@@ -43,7 +44,7 @@ npm run db:start     # local Supabase (Docker must be running)
 npm run db:status    # API URL and publishable key for .env.local
 npm run db:reset     # rebuild local DB from ALL migrations + seed (also proves they apply from scratch)
 npm run db:stop
-npm run dev          # http://localhost:5173/hasafsal/
+npm run dev          # http://localhost:5173/
 npm run build        # tsc --noEmit + vite build
 npm run db:push:dry  # preview production migrations (needs `npx supabase login` + `link`)
 npm run db:push      # PRODUCTION (supabase db push --remote). Never run without asking.
@@ -71,5 +72,5 @@ About 200 concurrent Realtime connections, 1 GB storage. Public OpenStreetMap ti
 2. Spam/abuse protection and a way to report an item.
 3. Error monitoring (Sentry) and privacy-friendly analytics.
 4. Before public launch: a proper map-tile provider and geocoder (MapTiler/Mapbox) with live address suggestions in Hebrew.
-5. Custom domain: change `base` in `vite.config.ts` and `start_url`/`scope` in `public/manifest.webmanifest` from `/hasafsal/` to `/`.
+5. Custom domain: change `base` in `vite.config.ts` and `start_url`/`scope` in `public/manifest.webmanifest` (done: the site is served from the root of https://www.hasafsal.net; apex hasafsal.net and the old github.io address redirect there; see README "דומיין").
 6. Generate DB types with `supabase gen types typescript` instead of hand-written `src/types.ts`.
