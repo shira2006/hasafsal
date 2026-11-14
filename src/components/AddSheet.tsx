@@ -18,6 +18,45 @@ interface Props {
   onError: (msg: string) => void;
 }
 
+// בטלפון (מסך מגע) מציגים שני כפתורים נפרדים: צילום במצלמה, או בחירה מהגלריה. במחשב כפתור אחד.
+const IS_TOUCH = typeof window !== "undefined" && !!window.matchMedia?.("(pointer: coarse)").matches;
+
+const svgProps = { viewBox: "0 0 24 24", width: 18, height: 18, fill: "none", stroke: "currentColor", strokeWidth: 2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true } as const;
+const CameraIcon = () => (
+  <svg {...svgProps}><path d="M4 8h3l1.5-2h7L17 8h3v11H4z" /><circle cx="12" cy="13" r="3.5" /></svg>
+);
+const GalleryIcon = () => (
+  <svg {...svgProps}><rect x="3.5" y="4.5" width="17" height="15" rx="2" /><circle cx="9" cy="10" r="1.6" /><path d="M4 17l5-4.5 3.5 3 3-2.5L20 16" /></svg>
+);
+
+function PhotoButtons({ replacing, onFile }: { replacing: boolean; onFile: (f?: File) => void }) {
+  const pick = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    e.target.value = ""; // כדי שאפשר יהיה לבחור שוב את אותו קובץ
+    onFile(f);
+  };
+  if (!IS_TOUCH) {
+    return (
+      <label className="btn small secondary">
+        {replacing ? "החלפה" : "הוספת תמונה"}
+        <input type="file" accept="image/*" hidden onChange={pick} />
+      </label>
+    );
+  }
+  return (
+    <>
+      <label className="btn small secondary">
+        <CameraIcon /> {replacing ? "צילום חדש" : "צילום"}
+        <input type="file" accept="image/*" capture="environment" hidden onChange={pick} />
+      </label>
+      <label className="btn small secondary">
+        <GalleryIcon /> {replacing ? "בחירה אחרת" : "מהגלריה"}
+        <input type="file" accept="image/*" hidden onChange={pick} />
+      </label>
+    </>
+  );
+}
+
 export default function AddSheet({ debugInfo, locationLabel, resolving, isCurrent, isMapPick, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
@@ -74,7 +113,7 @@ export default function AddSheet({ debugInfo, locationLabel, resolving, isCurren
   return (
     <div className="sheet">
       <div className="sheet-head">
-        <h2>מצאת ספסל?</h2>
+        <h2>הוספת מיקום לספסל</h2>
         <div className="head-actions">
           <button className="btn small" disabled={!canPublish} onClick={publish}>
             {busy ? <><BenchLoader size={16} label="מעלים" /> מעלים...</> : "פרסום"}
@@ -85,29 +124,17 @@ export default function AddSheet({ debugInfo, locationLabel, resolving, isCurren
 
       {/* תמונה: בלי תמונה רואים רק כפתור הוספה */}
       <div className="field">
-        <span className="label">תמונה <span className="req">*</span></span>
-        {preview ? (
-          <>
-            <img className="preview" src={preview} alt="תצוגה מקדימה" />
-            <div className="row">
-              <label className="btn small secondary">
-                החלפה
-                <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-              </label>
-              <button type="button" className="btn small" onClick={removePhoto}>הסרה</button>
-            </div>
-          </>
-        ) : (
-          <label className="btn small secondary add-photo">
-            הוספת תמונה
-            <input type="file" accept="image/*" hidden onChange={(e) => onFile(e.target.files?.[0])} />
-          </label>
-        )}
+        <span className="label">תמונה</span>
+        {preview && <img className="preview" src={preview} alt="תצוגה מקדימה" />}
+        <div className="row photo-actions">
+          <PhotoButtons replacing={!!preview} onFile={onFile} />
+          {preview && <button type="button" className="btn small" onClick={removePhoto}>הסרה</button>}
+        </div>
       </div>
 
       {/* תיאור: פסקה אחת, גם על הפריטים וגם על המיקום (איפה בדיוק) */}
       <div className="field">
-        <label className="label" htmlFor="desc">תיאור <span className="req">*</span></label>
+        <label className="label" htmlFor="desc">תיאור</label>
         <textarea
           id="desc"
           rows={3}

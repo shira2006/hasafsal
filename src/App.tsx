@@ -109,12 +109,16 @@ export default function App() {
   const onBounds = useCallback((b: Bounds) => setBounds(b), []);
   const selected = selectedId ? items.get(selectedId) ?? null : null;
 
-  async function took(item: Item) {
+  // "לקחתי" ו"זה לא כאן": בשני המקרים הפריט יורד מהמפה אצל כולם. ההודעה שונה.
+  const took = (item: Item) => leave(item, "תתחדש/י!", "success");
+  const missing = (item: Item) => leave(item, "ממש מצטערים שלא מצאתם. הסרנו אותו מהמפה", "info");
+
+  async function leave(item: Item, successMessage: string, kind: "success" | "info") {
     tookByMe.current.add(item.id); // כדי שהעדכון בזמן אמת על המחיקה שלנו לא יציג הודעה נוספת
     try {
       const removed = await removeItem(item);
       setSelectedId(null);
-      if (removed) toast.success("תתחדש/י!");
+      if (removed) toast[kind](successMessage);
       else toast.info("ממש מצטערים, כנראה שזה נפל לנו בין הכסאות");
     } catch (e) {
       tookByMe.current.delete(item.id);
@@ -242,7 +246,7 @@ export default function App() {
             </div>
           )}
         </div>
-        {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
+        {selected && <ItemSheet item={selected} me={me} onTook={took} onMissing={missing} onClose={() => setSelectedId(null)} />}
         {pick && (
           <AddSheet
             debugInfo={`pin ${pick[0].toFixed(5)}, ${pick[1].toFixed(5)} | gps ${me ? `${me[0].toFixed(5)}, ${me[1].toFixed(5)}` : "none"} ±${Math.round(meAccuracy ?? 0)}m | source: ${pickSource}`}
