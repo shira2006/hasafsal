@@ -9,7 +9,9 @@ import { useToasts } from "./components/Toasts";
 import { friendlyError } from "./lib/errors";
 import BenchLoader from "./components/BenchLoader";
 import { useDelayedFlag, useGeolocation, useMinVisible, useView, type LatLng } from "./hooks";
-import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
+import UpdateSheet from "./components/UpdateSheet";
+import LeftoverDialog from "./components/LeftoverDialog";
+import { createItem, fetchItemsInBounds, removeItem, replaceItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
 import type { Bounds, Item } from "./types";
@@ -29,6 +31,8 @@ export default function App() {
   const [pickSource, setPickSource] = useState<"current" | "map" | "search">("map"); // איך נבחר המיקום
   const [pickAddress, setPickAddress] = useState<string | null>(null); // כתובת אמיתית של המיקום הנבחר, אם כבר ידועה
   const [dragging, setDragging] = useState(false); // מצב גרירה: אפשר להזיז את הלב על המפה
+  const [askLeftover, setAskLeftover] = useState<Item | null>(null); // אחרי "לקחתי": נשאר משהו על הספסל?
+  const [updating, setUpdating] = useState<{ item: Item; mode: "took" | "added" } | null>(null); // עדכון ספסל קיים
   const [focus, setFocus] = useState<Focus | null>(null);
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -116,9 +120,27 @@ export default function App() {
   }, []);
   const selected = selectedId ? items.get(selectedId) ?? null : null;
 
-  // "לקחתי" ו"זה לא כאן": בשני המקרים הפריט יורד מהמפה אצל כולם. ההודעה שונה.
-  const took = (item: Item) => leave(item, "תתחדש/י!", "success");
+  // "לקחתי": שואלים אם נשאר משהו על הספסל. "הוספתי לספסל": הספסל נשאר ומתעדכן.
+  // "זה לא כאן": הפריט יורד מהמפה אצל כולם.
+  const took = (item: Item) => setAskLeftover(item);
+  const added = (item: Item) => setUpdating({ item, mode: "added" });
   const missing = (item: Item) => leave(item, "ממש מצטערים שלא מצאתם. הסרנו אותו מהמפה", "info");
+
+  /** מחליפים את הספסל בחדש באותו מקום (קודם יוצרים את החדש, ואז מוחקים את הישן). */
+  async function submitUpdate(p: { blob: Blob | null; keepPhoto: boolean; description: string }) {
+    if (!updating) return;
+    const { item, mode } = updating;
+    tookByMe.current.add(item.id); // המחיקה של הישן היא שלנו: בלי הודעה נוספת
+    try {
+      await replaceItem(item, p);
+      setUpdating(null);
+      setSelectedId(null);
+      toast.success(mode === "took" ? "תתחדש/י! תודה שהשארת משהו לאחרים" : "תודה! הספסל עודכן");
+    } catch (e) {
+      tookByMe.current.delete(item.id);
+      toast.error(friendlyError(e, "לא הצלחנו לעדכן את הספסל. נסו שוב"));
+    }
+  }
 
   async function leave(item: Item, successMessage: string, kind: "success" | "info") {
     tookByMe.current.add(item.id); // כדי שהעדכון בזמן אמת על המחיקה שלנו לא יציג הודעה נוספת
@@ -150,6 +172,8 @@ export default function App() {
   // ברירת המחדל: המיקום הנוכחי. אפשר לשנות בגרירת הסמן או בחיפוש כתובת.
   function startAdd() {
     setSelectedId(null);
+    setUpdating(null);
+    setAskLeftover(null);
     const center: LatLng | null = bounds ? [(bounds.south + bounds.north) / 2, (bounds.west + bounds.east) / 2] : null;
     const start = me ?? center;
     if (!start) return;
@@ -209,7 +233,7 @@ export default function App() {
   return (
     <div className="app">
       <Navbar view={view} />
-      <div className={`stage${selected || pick ? " has-sheet" : ""}${dragging ? " dragging" : ""}`}>
+      <div className={`stage${selected || pick || updating ? " has-sheet" : ""}${dragging ? " dragging" : ""}`}>
         {/* הדף מוצג מעל המפה (והמפה נשארת טעונה), כדי שהמיקום והזום לא יאבדו */}
         {view === "about" && <AboutPage />}
         <div className="map-area">
@@ -224,6 +248,8 @@ export default function App() {
             onPickMove={onPickMove}
             onSelect={(id) => {
               closeAdd();
+              setUpdating(null);
+              setAskLeftover(null);
               setSelectedId(id);
               const it = items.get(id);
               if (it) focusOn([it.lat, it.lng]);
@@ -246,7 +272,19 @@ export default function App() {
             </div>
           )}
         </div>
-        {selected && <ItemSheet item={selected} me={me} onTook={took} onMissing={missing} onClose={() => setSelectedId(null)} />}
+        {selected && !updating && (
+          <ItemSheet item={selected} me={me} onTook={took} onAdded={added} onMissing={missing} onClose={() => setSelectedId(null)} />
+        )}
+        {updating && (
+          <UpdateSheet
+            key={updating.item.id}
+            item={updating.item}
+            mode={updating.mode}
+            onSubmit={submitUpdate}
+            onClose={() => setUpdating(null)}
+            onError={(msg) => toast.error(msg)}
+          />
+        )}
         {pick && (
           <AddSheet
             debugInfo={`pin ${pick[0].toFixed(5)}, ${pick[1].toFixed(5)} | gps ${me ? `${me[0].toFixed(5)}, ${me[1].toFixed(5)}` : "none"} ±${Math.round(meAccuracy ?? 0)}m | source: ${pickSource}`}
@@ -264,6 +302,13 @@ export default function App() {
           />
         )}
       </div>
+      {askLeftover && (
+        <LeftoverDialog
+          onEmpty={() => { const it = askLeftover; setAskLeftover(null); leave(it, "תתחדש/י!", "success"); }}
+          onLeft={() => { const it = askLeftover; setAskLeftover(null); setUpdating({ item: it, mode: "took" }); }}
+          onClose={() => setAskLeftover(null)}
+        />
+      )}
     </div>
   );
 }
