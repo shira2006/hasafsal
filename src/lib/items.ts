@@ -33,10 +33,13 @@ export async function createItem(p: { blob: Blob | null; description: string; ad
   }
 }
 
-export async function removeItem(item: Item) {
-  const { error } = await supabase.from("items").delete().eq("id", item.id);
+/** מוחק את הפריט. מחזיר false אם הוא כבר לא היה קיים (מישהו אחר כבר לקח אותו). */
+export async function removeItem(item: Item): Promise<boolean> {
+  const { data, error } = await supabase.from("items").delete().eq("id", item.id).select("id");
   if (error) throw error;
+  if (!data || data.length === 0) return false;
   if (item.photo_path) supabase.storage.from(BUCKET).remove([item.photo_path]);
+  return true;
 }
 
 /** מאזין בזמן אמת להוספה/הסרה של פריטים אצל כל המשתמשים. מחזיר פונקציית ניקוי. */

@@ -5,19 +5,20 @@ import AddSheet from "./components/AddSheet";
 import Navbar from "./components/Navbar";
 import FloatingMenu from "./components/FloatingMenu";
 import AboutPage from "./components/AboutPage";
-import { useGeolocation, useToast, useView, type LatLng } from "./hooks";
+import { useToasts } from "./components/Toasts";
+import { friendlyError } from "./lib/errors";
+import { useGeolocation, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
 import type { Bounds, Item } from "./types";
 
 const CURRENT_LABEL = "המיקום הנוכחי";
-const errText =(e: unknown) => (e instanceof Error ? e.message : (e as { message?: string })?.message ?? String(e));
 
 export default function App() {
-  const [toast, setToast] = useToast();
+  const toast = useToasts();
   const view = useView();
-  const { pos: me, accuracy: meAccuracy } = useGeolocation(() => setToast("אין גישה למיקום. אשרו מיקום בדפדפן"));
+  const { pos: me, accuracy: meAccuracy } = useGeolocation(() => toast.info("אין גישה למיקום. אשרו מיקום בדפדפן"));
   const meAccuracyRef = useRef<number | null>(null);
   meAccuracyRef.current = meAccuracy;
   const [items, setItems] = useState<Map<string, Item>>(new Map());
@@ -32,6 +33,9 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const boundsRef = useRef<Bounds | null>(null);
   boundsRef.current = bounds;
+  const selectedIdRef = useRef<string | null>(null);
+  selectedIdRef.current = selectedId;
+  const tookByMe = useRef(new Set<string>()); // פריטים שאנחנו עצמנו לקחנו (לא להציג הודעה על המחיקה שלהם)
 
   // טעינת פריטים לפי האזור שמוצג במפה. הטעינה מחליפה את הרשימה, כך שפריטים שנלקחו בזמן שהאפליקציה
   // הייתה ברקע נעלמים, ופריטים רחוקים לא נשארים בזיכרון.
@@ -41,10 +45,19 @@ export default function App() {
       try {
         const list = await fetchItemsInBounds(bounds);
         setItems(new Map(list.map((i) => [i.id, i])));
-      } catch (e) { setToast("שגיאה בטעינה: " + errText(e)); }
+      } catch (e) { toast.error(friendlyError(e, "לא הצלחנו לטעון את הספסלים")); }
     }, 300);
     return () => clearTimeout(t);
-  }, [bounds, refreshKey, setToast]);
+  }, [bounds, refreshKey, toast]);
+
+  // מתריעים כשהחיבור נופל, ובחזרתו טוענים מחדש
+  useEffect(() => {
+    const off = () => toast.error("אין חיבור לאינטרנט");
+    const on = () => { toast.success("החיבור חזר"); setRefreshKey((k) => k + 1); };
+    window.addEventListener("offline", off);
+    window.addEventListener("online", on);
+    return () => { window.removeEventListener("offline", off); window.removeEventListener("online", on); };
+  }, [toast]);
 
   // Realtime: מחוברים רק כשהאפליקציה מוצגת על המסך (חוסך חיבורים מהמגבלה של 200),
   // ומתעלמים מפריטים חדשים שמחוץ לאזור שמוצג. בחזרה לחזית טוענים מחדש.
@@ -60,6 +73,9 @@ export default function App() {
         },
         (id) => {
           setItems((p) => { const m = new Map(p); m.delete(id); return m; });
+          // אם מישהו אחר לקח את הפריט שאנחנו מסתכלים עליו, מסבירים למה הוא נעלם
+          if (selectedIdRef.current === id && !tookByMe.current.has(id)) toast.info("ממש מצטערים, כנראה שזה נפל לנו בין הכסאות");
+          tookByMe.current.delete(id);
           setSelectedId((cur) => (cur === id ? null : cur));
         }
       );
@@ -78,8 +94,16 @@ export default function App() {
   const selected = selectedId ? items.get(selectedId) ?? null : null;
 
   async function took(item: Item) {
-    try { await removeItem(item); setSelectedId(null); setToast("תודה! עדכנו את המפה"); }
-    catch (e) { setToast("שגיאה בהסרה: " + errText(e)); }
+    tookByMe.current.add(item.id); // כדי שהעדכון בזמן אמת על המחיקה שלנו לא יציג הודעה נוספת
+    try {
+      const removed = await removeItem(item);
+      setSelectedId(null);
+      if (removed) toast.success("תתחדשו! אנחנו כבר נעדכן את המפה");
+      else toast.info("ממש מצטערים, כנראה שזה נפל לנו בין הכסאות");
+    } catch (e) {
+      tookByMe.current.delete(item.id);
+      toast.error(friendlyError(e, "לא הצלחנו להסיר את הפריט. נסו שוב"));
+    }
   }
 
   function closeAdd() { setPick(null); setDragging(false); }
@@ -90,8 +114,8 @@ export default function App() {
       // שומרים את הכתובת רק אם כבר זוהתה (לא את הטקסט הכללי "המיקום הנוכחי")
       await createItem({ ...p, address: pickAddress, lat: pick[0], lng: pick[1] });
       closeAdd();
-      setToast("תודה! הפריט עלה למפה");
-    } catch (e) { setToast("שגיאה בפרסום: " + errText(e)); }
+      toast.success("מלכ/ה! אנחנו כבר נדאג שזה ימצא בית אוהב");
+    } catch (e) { toast.error(friendlyError(e, "לא הצלחנו לפרסם את הפריט. נסו שוב")); }
   }
 
   const focusOn = (pos: LatLng) => setFocus((f) => ({ pos, n: (f?.n ?? 0) + 1 }));
@@ -177,7 +201,7 @@ export default function App() {
           <FloatingMenu
             showAdd={!pick}
             onAdd={startAdd}
-            onRecenter={() => (me ? setRecenter((n) => n + 1) : setToast("מחפשים מיקום..."))}
+            onRecenter={() => (me ? setRecenter((n) => n + 1) : toast.info("מחפשים מיקום..."))}
           />
           {dragging && (
             <div className="drag-bar" role="status">
@@ -199,11 +223,10 @@ export default function App() {
             onUseMyLocation={backToCurrentLocation}
             onStartDrag={() => setDragging(true)}
             onClose={closeAdd}
-            onError={setToast}
+            onError={(msg) => toast.error(msg)}
           />
         )}
       </div>
-      {toast && <div className="toast">{toast}</div>}
     </div>
   );
 }

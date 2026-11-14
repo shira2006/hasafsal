@@ -37,13 +37,3 @@ export function useView(): View {
   }, []);
   return view;
 }
-
-export function useToast() {
-  const [msg, setMsg] = useState<string | null>(null);
-  useEffect(() => {
-    if (!msg) return;
-    const t = setTimeout(() => setMsg(null), 3000);
-    return () => clearTimeout(t);
-  }, [msg]);
-  return [msg, setMsg] as const;
-}

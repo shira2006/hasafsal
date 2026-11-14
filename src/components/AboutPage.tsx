@@ -1,27 +1,27 @@
 import { useState } from "react";
 import { sendSuggestion } from "../lib/suggestions";
+import { friendlyError } from "../lib/errors";
+import { useToasts } from "./Toasts";
 
 const MAX = 1000;
 
 /** דף "המשימה שלנו": הסיפור, והצעות לשיפור. (נוסח ראשוני, לעריכה.) */
 export default function AboutPage() {
+  const toast = useToasts();
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const [sent, setSent] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const valid = text.trim().length >= 3;
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!valid || busy) return;
     setBusy(true);
-    setError(null);
     try {
       await sendSuggestion(text);
-      setSent(true);
       setText("");
-    } catch {
-      setError("לא הצלחנו לשלוח. נסו שוב בעוד רגע");
+      toast.success("תודה! ההצעה שלכם התקבלה");
+    } catch (err) {
+      toast.error(friendlyError(err, "לא הצלחנו לשלוח. נסו שוב בעוד רגע"));
     } finally {
       setBusy(false);
     }
@@ -55,14 +55,12 @@ export default function AboutPage() {
             rows={4}
             maxLength={MAX}
             value={text}
-            onChange={(e) => { setText(e.target.value); setSent(false); }}
+            onChange={(e) => setText(e.target.value)}
             placeholder="כתבו כאן..."
             aria-label="ההצעה שלכם"
           />
           <div className="suggest-row">
             <button className="btn" type="submit" disabled={!valid || busy}>{busy ? "שולחים..." : "שליחה"}</button>
-            {sent && <span role="status">תודה! ההצעה התקבלה 💛</span>}
-            {error && <span role="alert" className="err">{error}</span>}
           </div>
         </form>
 

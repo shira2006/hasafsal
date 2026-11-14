@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { shrinkImage } from "../lib/image";
+import { friendlyError } from "../lib/errors";
 
 interface Props {
   debugInfo?: string; // לפיתוח בלבד: קואורדינטות, דיוק ומקור המיקום
@@ -40,7 +41,7 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
       setBlob(b);
       setPreview(URL.createObjectURL(b));
     } catch (e) {
-      onError(e instanceof Error ? e.message : "שגיאה בתמונה");
+      onError(friendlyError(e, "לא הצלחנו לטעון את התמונה. נסו תמונה אחרת"));
     }
   }
 
@@ -62,7 +63,7 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
       const ok = await onSearch(q);
       setNotFound(!ok);
     } catch (err) {
-      onError(err instanceof Error ? err.message : "חיפוש כתובת נכשל");
+      onError(friendlyError(err, "החיפוש לא הצליח. נסו שוב"));
     } finally {
       setSearching(false);
     }
