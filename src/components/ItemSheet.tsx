@@ -6,6 +6,9 @@ import { reverseGeocode } from "../lib/geocode";
 import bench from "../assets/bench-generic.svg";
 import BenchLoader from "./BenchLoader";
 import PhotoModal from "./PhotoModal";
+import ShareIcon from "./ShareIcon";
+import { useToasts } from "./Toasts";
+import { itemLink, shareLink } from "../lib/share";
 
 interface Props {
   item: Item;
@@ -93,7 +96,16 @@ function SadFace() {
 }
 
 export default function ItemSheet({ item, me, onTook, onAdded, onMissing, onClose }: Props) {
+  const toast = useToasts();
   const [busy, setBusy] = useState(false);
+  async function share() {
+    try {
+      const r = await shareLink(itemLink(item.id), "מצאתי משהו למסירה בספסל:");
+      if (r === "copied") toast.success("הקישור הועתק");
+    } catch {
+      toast.error("לא הצלחנו לשתף. נסו שוב");
+    }
+  }
   async function run(action: (item: Item) => void | Promise<void>) {
     setBusy(true);
     try { await action(item); } finally { setBusy(false); }
@@ -112,7 +124,10 @@ export default function ItemSheet({ item, me, onTook, onAdded, onMissing, onClos
           <span className="posted">פורסם {when}</span>
           {distance && <span className="posted">{distance} ממך</span>}
         </div>
-        <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
+        <div className="head-btns">
+          <button className="close" onClick={share} aria-label="שיתוף הספסל" title="שיתוף"><ShareIcon size={18} /></button>
+          <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
+        </div>
       </div>
 
       <ItemPhoto key={item.id} item={item} />
