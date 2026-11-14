@@ -59,20 +59,20 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
 
       <ItemPhoto key={item.id} item={item} />
 
-      <div className="item-info">
-        <h2>{item.description || "ללא תיאור"}</h2>
+      {/* תיאור: פסקה אחת על רקע לבן. (בפריטים ישנים שנשמרה בהם הערת מיקום נפרדת, היא מוצגת כהמשך הפסקה.) */}
+      <div className="card item-info">
+        <p className="description">{[item.description, item.location_note].filter(Boolean).join("\n") || "ללא תיאור"}</p>
         <p className="meta">פורסם {when}</p>
       </div>
 
-      {/* מיקום: כתובת, פירוט, מרחק, וניווט לשם */}
-      <div className="loc-card">
+      {/* מיקום: כתובת, מרחק, וניווט לשם */}
+      <div className="card loc-card">
         <span className="label">מיקום</span>
         <p className="address">{address ?? " "}</p>
-        {item.location_note && <p className="note-text">{item.location_note}</p>}
         <div className="nav-row">
           <span className="dist">{distance ? `${distance} ממך` : ""}</span>
           <a
-            className="btn plain small"
+            className="btn secondary small"
             target="_blank"
             rel="noopener noreferrer"
             href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}

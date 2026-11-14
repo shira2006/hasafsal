@@ -84,7 +84,7 @@ export default function App() {
 
   function closeAdd() { setPick(null); setDragging(false); }
 
-  async function publish(p: { blob: Blob | null; description: string; locationNote: string }) {
+  async function publish(p: { blob: Blob | null; description: string }) {
     if (!pick) return;
     try {
       // שומרים את הכתובת רק אם כבר זוהתה (לא את הטקסט הכללי "המיקום הנוכחי")

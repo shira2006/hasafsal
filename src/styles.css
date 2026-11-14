@@ -89,21 +89,21 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 
 /* גיליון פריט: הפעולות צמודות לתחתית (גם כשצריך לגלול), ו"לקחתי" הוא הכפתור המרכזי */
 .item-sheet { padding-bottom: 0; max-height: 82%; }
-.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); }
+.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); box-shadow: 0 -8px 10px -8px rgba(59, 74, 82, .3); }
 .btn.took { flex: none; padding: 15px 18px; font-size: 19px; }
 /* בלי תמונה: הודעה במקום ציור */
 .no-photo { display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px; background: var(--soft); border-radius: var(--radius); text-align: center; font-size: 17px; }
 .sheet .no-photo img { width: auto; height: 70px; max-height: none; aspect-ratio: auto; border: 0; border-radius: 0; background: none; }
 .sheet img.photo { border: 0; }
-.item-info { display: flex; flex-direction: column; gap: 2px; }
-.item-info h2 { font-size: 24px; }
+.card { background: #fff; border-radius: var(--radius); padding: 12px 14px; }
+.item-info { display: flex; flex-direction: column; gap: 8px; }
+/* תיאור הפריט: פסקה (לא כותרת). שומרת על ירידות שורה שכתב המפרסם, וגם שוברת מילים ארוכות מאוד */
+.item-info .description { font-size: 17px; line-height: 1.55; white-space: pre-line; overflow-wrap: anywhere; }
 .sheet-head.end { justify-content: flex-end; }
-.btn.plain { background: #fff; }
 /* אזור ניווט */
-.loc-card { display: flex; flex-direction: column; gap: 6px; padding: 12px 14px; background: var(--soft); border-radius: var(--radius); }
+.loc-card { display: flex; flex-direction: column; gap: 6px; }
 .loc-card .label { font-size: 17px; }
-.loc-card .address { margin: 0; font-size: 18px; }
-.loc-card .note-text { margin: 0; font-size: 15px; color: var(--ink-soft); }
+.loc-card .address { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
 .nav-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
 .nav-row .dist { font-size: 15px; color: var(--ink-soft); }
 
@@ -121,7 +121,7 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 /* שדה המיקום: מציג את המיקום הנבחר, אפשר להקליד בו כתובת. כפתור קטן בתוכו חוזר למיקום הנוכחי. */
 .loc-group { display: flex; flex-direction: column; }
 .loc-field { position: relative; }
-.loc-field input { width: 100%; padding: 9px 10px; padding-inline-end: 86px; border: var(--line); border-radius: var(--radius) var(--radius) 0 0; background: #fff; font-size: 16px; text-overflow: ellipsis; }
+.loc-field input { width: 100%; padding: 9px 10px; padding-inline-end: 86px; border: var(--line); border-radius: var(--radius); background: #fff; font-size: 16px; text-overflow: ellipsis; }
 .loc-group textarea { margin-top: -2px; border-radius: 0 0 var(--radius) var(--radius); }
 .loc-icons { position: absolute; inset-block: 2px; inset-inline-end: 4px; display: flex; align-items: center; gap: 2px; }
 .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: none; border: 0; color: var(--ink); cursor: pointer; }

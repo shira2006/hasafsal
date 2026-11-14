@@ -7,7 +7,7 @@ interface Props {
   isCurrent: boolean;
   isMapPick: boolean; // המיקום נבחר על המפה (גרירה או הקשה)
   canUseMyLocation: boolean;
-  onSubmit: (p: { blob: Blob | null; description: string; locationNote: string }) => Promise<void>;
+  onSubmit: (p: { blob: Blob | null; description: string }) => Promise<void>;
   onSearch: (query: string) => Promise<boolean>;
   onUseMyLocation: () => void;
   onStartDrag: () => void;
@@ -19,7 +19,6 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
-  const [locationNote, setLocationNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [locText, setLocText] = useState(locationLabel); // שדה המיקום: מציג את המיקום הנבחר, ואפשר להקליד בו כתובת
   const [searching, setSearching] = useState(false);
@@ -49,7 +48,7 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
 
   async function publish() {
     setBusy(true);
-    try { await onSubmit({ blob, description: description.trim(), locationNote: locationNote.trim() }); }
+    try { await onSubmit({ blob, description: description.trim() }); }
     finally { setBusy(false); }
   }
 
@@ -79,49 +78,6 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
         </div>
       </div>
 
-      {/* מיקום: שדה אחד שאפשר להקליד בו כתובת, כפתור חזרה למיקום נוכחי, וגרירה על המפה */}
-      <div className="field">
-        <label className="label" htmlFor="addr">מיקום</label>
-        {/* קבוצה אחת: כתובת (עם אייקוני מרכוז ומפה בתוך השדה) ומתחתיה תיאור קצר, כך שהכול מרגיש חלק אחד של "מיקום" */}
-        <div className="loc-group">
-          <form className="loc-field" onSubmit={search}>
-            <input
-              id="addr"
-              type="search"
-              enterKeyHint="search"
-              placeholder="הקלידו כתובת"
-              value={locText}
-              onChange={(e) => { setLocText(e.target.value); setNotFound(false); }}
-              onFocus={(e) => e.currentTarget.select()}
-              onBlur={() => { if (!searching) setLocText(locationLabel); }}
-            />
-            <div className="loc-icons">
-              <button type="button" className={`icon-btn${isCurrent ? " on" : ""}`} disabled={!canUseMyLocation} onClick={onUseMyLocation} aria-label="מיקום נוכחי" title="מיקום נוכחי">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-                </svg>
-              </button>
-              <button type="button" className={`icon-btn${isMapPick ? " on" : ""}`} onClick={onStartDrag} aria-label="בחירה על המפה" title="בחירה על המפה">
-                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                  <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" /><path d="M9 4v13.5M15 6.5V20" />
-                </svg>
-              </button>
-            </div>
-          </form>
-          <textarea
-            id="note"
-            aria-label="פרטו על המיקום"
-            rows={2}
-            maxLength={300}
-            placeholder="פרטו על המיקום"
-            value={locationNote}
-            onChange={(e) => setLocationNote(e.target.value)}
-          />
-        </div>
-        {import.meta.env.DEV && debugInfo && <p className="hint" dir="ltr">dev: {debugInfo}</p>}
-        {notFound && <p className="hint err">לא מצאנו את הכתובת. אפשר לנסח אחרת, או לבחור על המפה.</p>}
-      </div>
-
       {/* תמונה: בלי תמונה רואים רק כפתור הוספה */}
       <div className="field">
         <span className="label">תמונה <span className="req">*</span></span>
@@ -144,9 +100,48 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
         )}
       </div>
 
+      {/* תיאור: פסקה אחת, גם על הפריטים וגם על המיקום (איפה בדיוק) */}
       <div className="field">
-        <label className="label" htmlFor="desc">תיאור הפריט <span className="req">*</span></label>
-        <textarea id="desc" rows={2} placeholder="למשל: כיסא עץ במצב טוב" value={description} onChange={(e) => setDescription(e.target.value)} />
+        <label className="label" htmlFor="desc">תיאור <span className="req">*</span></label>
+        <textarea
+          id="desc"
+          rows={3}
+          maxLength={500}
+          placeholder="תארו את הפריטים. ואם יש מה לספר על המיקום, כתבו איפה בדיוק, כדי לעזור לאחרים למצוא"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+        />
+      </div>
+
+      {/* מיקום: למטה. ברירת המחדל היא המיקום הנוכחי. שדה אחד שאפשר להקליד בו כתובת, עם אייקוני מרכוז ומפה */}
+      <div className="field">
+        <label className="label" htmlFor="addr">מיקום</label>
+        <form className="loc-field" onSubmit={search}>
+          <input
+            id="addr"
+            type="search"
+            enterKeyHint="search"
+            placeholder="הקלידו כתובת"
+            value={locText}
+            onChange={(e) => { setLocText(e.target.value); setNotFound(false); }}
+            onFocus={(e) => e.currentTarget.select()}
+            onBlur={() => { if (!searching) setLocText(locationLabel); }}
+          />
+          <div className="loc-icons">
+            <button type="button" className={`icon-btn${isCurrent ? " on" : ""}`} disabled={!canUseMyLocation} onClick={onUseMyLocation} aria-label="מיקום נוכחי" title="מיקום נוכחי">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+              </svg>
+            </button>
+            <button type="button" className={`icon-btn${isMapPick ? " on" : ""}`} onClick={onStartDrag} aria-label="בחירה על המפה" title="בחירה על המפה">
+              <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" /><path d="M9 4v13.5M15 6.5V20" />
+              </svg>
+            </button>
+          </div>
+        </form>
+        {import.meta.env.DEV && debugInfo && <p className="hint" dir="ltr">dev: {debugInfo}</p>}
+        {notFound && <p className="hint err">לא מצאנו את הכתובת. אפשר לנסח אחרת, או לבחור על המפה.</p>}
       </div>
     </div>
   );

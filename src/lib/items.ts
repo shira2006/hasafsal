@@ -15,7 +15,7 @@ export async function fetchItemsInBounds(b: Bounds): Promise<Item[]> {
 }
 
 /** התמונה אופציונלית, אבל צריך לפחות תמונה או תיאור (נאכף גם במסד הנתונים). */
-export async function createItem(p: { blob: Blob | null; description: string; locationNote: string; address: string | null; lat: number; lng: number }) {
+export async function createItem(p: { blob: Blob | null; description: string; address: string | null; lat: number; lng: number }) {
   let path: string | null = null;
   let photo_url: string | null = null;
   if (p.blob) {
@@ -25,7 +25,7 @@ export async function createItem(p: { blob: Blob | null; description: string; lo
     photo_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
   }
   const { error } = await supabase.from("items").insert({
-    lat: p.lat, lng: p.lng, description: p.description || null, location_note: p.locationNote || null, address: p.address || null, photo_url, photo_path: path,
+    lat: p.lat, lng: p.lng, description: p.description || null, address: p.address || null, photo_url, photo_path: path,
   });
   if (error) {
     if (path) supabase.storage.from(BUCKET).remove([path]);
