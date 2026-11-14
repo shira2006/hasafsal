@@ -8,8 +8,7 @@ import AboutPage from "./components/AboutPage";
 import { useToasts } from "./components/Toasts";
 import { friendlyError } from "./lib/errors";
 import BenchLoader from "./components/BenchLoader";
-import ErrorCard from "./components/ErrorCard";
-import { useDelayedFlag, useGeolocation, useView, type LatLng } from "./hooks";
+import { useDelayedFlag, useGeolocation, useMinVisible, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
@@ -34,9 +33,13 @@ export default function App() {
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false);
-  const [loadError, setLoadError] = useState(false); // לא הצלחנו לטעון את הספסלים
   const [lookingUp, setLookingUp] = useState(false); // מחפשים כתובת למיקום הנבחר
+  // מציין "טוענים ספסלים...": רק אם הטעינה מתארכת (כמו ב-main), לא כשהאפליקציה עצמה מזיזה את המפה (למשל בלחיצה על לב),
+  // ואחרי שהוצג הוא נשאר עד שהאנימציה שלו מסתיימת
   const showLoading = useDelayedFlag(loadingItems, 400);
+  const [announceLoad, setAnnounceLoad] = useState(true);
+  const announceNext = useRef(true); // הטעינה הבאה נובעת מהזזה של המשתמש (או מהטעינה הראשונה)
+  const pillVisible = useMinVisible(showLoading && announceLoad && view === "map", 2000);
   const boundsRef = useRef<Bounds | null>(null);
   boundsRef.current = bounds;
   const selectedIdRef = useRef<string | null>(null);
@@ -48,23 +51,23 @@ export default function App() {
   useEffect(() => {
     if (!bounds) return;
     let cancelled = false; // תשובה ישנה לא דורסת תשובה חדשה יותר
+    setAnnounceLoad(announceNext.current);
+    announceNext.current = false; // טעינות חוזרות (חזרה לחזית, חיבור שחזר) שקטות
     const t = setTimeout(async () => {
       setLoadingItems(true);
       try {
         const list = await fetchItemsInBounds(bounds);
         if (cancelled) return;
         setItems(new Map(list.map((i) => [i.id, i])));
-        setLoadError(false);
         setLoadingItems(false);
       } catch (e) {
         if (cancelled) return;
-        console.error(e);
-        setLoadError(true);
         setLoadingItems(false);
+        toast.error(friendlyError(e, "לא הצלחנו לטעון את הספסלים"));
       }
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [bounds, refreshKey]);
+  }, [bounds, refreshKey, toast]);
 
   // מתריעים כשהחיבור נופל, ובחזרתו טוענים מחדש
   useEffect(() => {
@@ -106,15 +109,23 @@ export default function App() {
     return () => { document.removeEventListener("visibilitychange", onVis); stop(); };
   }, []);
 
-  const onBounds = useCallback((b: Bounds) => setBounds(b), []);
+  // byApp: המפה זזה בגלל האפליקציה עצמה (לחיצה על לב, מרכוז, פתיחת פאנל), לא בגלל גרירה או זום של המשתמש
+  const onBounds = useCallback((b: Bounds, byApp: boolean) => {
+    announceNext.current = !byApp;
+    setBounds(b);
+  }, []);
   const selected = selectedId ? items.get(selectedId) ?? null : null;
 
-  async function took(item: Item) {
+  // "לקחתי" ו"זה לא כאן": בשני המקרים הפריט יורד מהמפה אצל כולם. ההודעה שונה.
+  const took = (item: Item) => leave(item, "תתחדש/י!", "success");
+  const missing = (item: Item) => leave(item, "ממש מצטערים שלא מצאתם. הסרנו אותו מהמפה", "info");
+
+  async function leave(item: Item, successMessage: string, kind: "success" | "info") {
     tookByMe.current.add(item.id); // כדי שהעדכון בזמן אמת על המחיקה שלנו לא יציג הודעה נוספת
     try {
       const removed = await removeItem(item);
       setSelectedId(null);
-      if (removed) toast.success("תתחדש/י!");
+      if (removed) toast[kind](successMessage);
       else toast.info("ממש מצטערים, כנראה שזה נפל לנו בין הכסאות");
     } catch (e) {
       tookByMe.current.delete(item.id);
@@ -224,16 +235,9 @@ export default function App() {
             onAdd={startAdd}
             onRecenter={() => (me ? setRecenter((n) => n + 1) : toast.info("מחפשים מיקום..."))}
           />
-          {/* טעינת ספסלים: מציין קטן (רק אם הטעינה מתארכת), ואם נכשלה: כרטיס שגיאה עם ניסיון חוזר */}
-          {showLoading && !loadError && (
-            <div className="map-status"><BenchLoader size={26} label="טוענים ספסלים..." showLabel /></div>
-          )}
-          {loadError && (
-            <ErrorCard
-              title="לא הצלחנו לטעון את הספסלים"
-              text="בדקו את החיבור ונסו שוב"
-              onRetry={() => { setLoadError(false); setRefreshKey((k) => k + 1); }}
-            />
+          {/* טעינת ספסלים: מציין קטן בראש המפה, רק אם הטעינה מתארכת. הציור שלו משלים את עצמו עד הסוף. */}
+          {pillVisible && (
+            <div className="map-status"><BenchLoader size={26} once label="טוענים ספסלים..." showLabel /></div>
           )}
           {dragging && (
             <div className="drag-bar" role="status">
@@ -242,7 +246,7 @@ export default function App() {
             </div>
           )}
         </div>
-        {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
+        {selected && <ItemSheet item={selected} me={me} onTook={took} onMissing={missing} onClose={() => setSelectedId(null)} />}
         {pick && (
           <AddSheet
             debugInfo={`pin ${pick[0].toFixed(5)}, ${pick[1].toFixed(5)} | gps ${me ? `${me[0].toFixed(5)}, ${me[1].toFixed(5)}` : "none"} ±${Math.round(meAccuracy ?? 0)}m | source: ${pickSource}`}

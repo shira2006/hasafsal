@@ -20,14 +20,16 @@ interface Props {
   /** טקסט לקוראי מסך, ואם showLabel: גם מוצג לצד הציור */
   label?: string;
   showLabel?: boolean;
+  /** מצטייר פעם אחת עד הסוף ונשאר שלם (במקום לחזור על עצמו). למציין שמוצג זמן מוגבל. */
+  once?: boolean;
   className?: string;
 }
 
-/** מציין טעינה: ספסל שמצטייר מחדש ומחדש. בלי תנועה למי שביקש להפחית תנועה (מוצג ספסל מצויר). */
-export default function BenchLoader({ size = 40, label = "טוענים", showLabel = false, className = "" }: Props) {
+/** מציין טעינה: ספסל שמצטייר מחדש ומחדש (או פעם אחת, עם once). בלי תנועה למי שביקש להפחית תנועה (מוצג ספסל מצויר). */
+export default function BenchLoader({ size = 40, label = "טוענים", showLabel = false, once = false, className = "" }: Props) {
   const strokeWidth = Math.max(4, (168 / size) * 1.7); // עובי קו קבוע בערך בפיקסלים, בלי קשר לגודל
   return (
-    <span className={`bench-loader ${className}`} role="status" aria-label={label}>
+    <span className={`bench-loader${once ? " once" : ""} ${className}`} role="status" aria-label={label}>
       <svg viewBox="0 20 324 168" height={size} width={(size * 324) / 168} aria-hidden="true" style={{ "--sw": strokeWidth } as CSSProperties}>
         {STROKES.map((d, i) => (
           <path key={i} d={d} pathLength={1} style={{ "--i": i } as CSSProperties} />

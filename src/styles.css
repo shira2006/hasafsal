@@ -53,7 +53,7 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .navbar .spacer { flex: 1; }
 /* לשוניות: בלי מסגרת. רק העמוד הנוכחי מודגש. */
 .tabs { display: flex; gap: 4px; }
-.tabs a { padding: 6px 14px; border: 2px solid transparent; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; }
+.tabs a { padding: 6px 14px; border: 2px solid var(--ink); border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; }
 .tabs a:hover { background: rgba(59, 74, 82, .07); }
 .tabs a[aria-current="page"] { background: var(--peach); border-color: var(--ink); }
 
@@ -61,6 +61,10 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .btn { color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1; text-align: center; text-decoration: none; padding: 11px 18px; border-radius: var(--radius); border: var(--line); background: var(--peach); font-size: 16px; cursor: pointer; }
 .btn:active:not(:disabled) { filter: brightness(.95); }
 .btn.secondary { background: var(--sage); }
+/* צבעי כפתורים מהפלטה: ירוק (פעולה חיובית), צהוב (עזר), אדום (הסרה / "זה לא כאן") */
+.btn.green { background: var(--sage); }
+.btn.yellow { background: var(--butter); }
+.btn.red { background: var(--peach); } /* אותו צבע כמו כפתור הפלוס והלשונית הפעילה */
 .btn.primary { background: var(--peach); }
 .btn.small { flex: 0 0 auto; padding: 7px 16px; font-size: 15px; }
 .btn:disabled { opacity: .45; cursor: default; }
@@ -90,8 +94,10 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 /* גיליון פריט: הפעולות צמודות לתחתית (גם כשצריך לגלול), ו"לקחתי" הוא הכפתור המרכזי */
 .item-sheet { padding-top: 14px; padding-bottom: 0; max-height: 90%; gap: 8px; }
 .summary { display: flex; flex-direction: column; line-height: 1.35; }
-.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); }
-.btn.took { flex: none; padding: 15px 18px; font-size: 19px; }
+.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: row; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); }
+.btn.took { flex: 1 1 auto; padding: 15px 18px; font-size: 19px; }
+/* "זה לא כאן": משנית, בצד של "לקחתי" */
+.btn.missing { flex: 0 0 auto; padding: 12px 14px; font-size: 15px; }
 /* בלי תמונה: הודעה במקום ציור */
 .no-photo { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 12px; background: var(--soft); border-radius: var(--radius); text-align: center; font-size: 17px; }
 .sheet .no-photo img { width: auto; height: 56px; max-height: none; aspect-ratio: auto; border: 0; border-radius: 0; background: none; }
@@ -104,7 +110,7 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 /* חלונות נמוכים (טלפון קטן, או חלון מחשב נמוך): מקצרים ומצמצמים, כדי שהגיליון לא יצטרך לגלול */
 @media (max-height: 700px) {
   .description.clamp { -webkit-line-clamp: 2; }
-  .sheet .no-photo img { display: none; }
+  .sheet .no-photo img { height: 40px; }
   .sheet .photo-wrap { max-height: 16vh; }
   .item-sheet .actions { padding-bottom: calc(10px + env(safe-area-inset-bottom)); }
 }
@@ -124,7 +130,8 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .hint { margin: 0; font-size: 13px; color: var(--ink-soft); }
 .hint.err { color: #9b2c2c; }
 .sheet img.preview { aspect-ratio: auto; max-height: 20vh; }
-.add-photo { align-self: flex-start; }
+.photo-actions { flex-wrap: wrap; }
+.photo-actions .btn { flex: 0 0 auto; }
 .nowrap { white-space: nowrap; }
 
 /* שדה המיקום: מציג את המיקום הנבחר, אפשר להקליד בו כתובת. כפתור קטן בתוכו חוזר למיקום הנוכחי. */
@@ -183,6 +190,13 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
   stroke-dasharray: 1; stroke-dashoffset: 1; animation: bench-draw 2.6s ease-in-out infinite both; animation-delay: calc(var(--i, 0) * .2s); }
 .bench-loader path.heart { fill: var(--pink); stroke: none; stroke-dasharray: none; stroke-dashoffset: 0; opacity: 0; transform-box: fill-box; transform-origin: 50% 100%; animation: bench-heart 2.6s ease-in-out infinite both; animation-delay: 1.7s; }
 .bench-loader-label { font-size: 15px; }
+/* גרסה "פעם אחת": הספסל מצטייר עד הסוף, הלב קופץ, והכול נשאר שלם (בלי להיעלם ולהתחיל מחדש) */
+.bench-loader.once path { animation: bench-draw-once .55s ease-out both; animation-iteration-count: 1; animation-delay: calc(var(--i, 0) * .12s); }
+.bench-loader.once path.heart { animation: bench-heart-once .45s ease-out both; animation-iteration-count: 1; animation-delay: 1.3s; }
+@keyframes bench-draw-once { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes bench-heart-once { 0% { opacity: 0; transform: scale(.3); } 60% { opacity: 1; transform: scale(1.15); } 100% { opacity: 1; transform: scale(1); } }
+/* טעינת ספסלים: תג קטן בראש המפה */
+.map-status { position: absolute; z-index: 650; top: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 92%; white-space: nowrap; display: flex; align-items: center; padding: 6px 14px; background: #fff; border: var(--line); border-radius: var(--radius); box-shadow: var(--float); }
 @keyframes bench-draw { 0% { stroke-dashoffset: 1; opacity: 1; } 42%, 80% { stroke-dashoffset: 0; opacity: 1; } 100% { stroke-dashoffset: 0; opacity: 0; } }
 @keyframes bench-heart { 0%, 5% { opacity: 0; transform: scale(.3); } 20% { opacity: 1; transform: scale(1.15); } 30%, 55% { opacity: 1; transform: scale(1); } 75%, 100% { opacity: 0; transform: scale(1); } }
 @media (prefers-reduced-motion: reduce) {
@@ -190,7 +204,6 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
   .bench-loader path.heart { animation: none; opacity: 1; }
 }
 /* טעינת פריטים: תג קטן בראש המפה */
-.map-status { position: absolute; z-index: 650; top: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 92%; white-space: nowrap; display: flex; align-items: center; padding: 6px 14px; background: #fff; border: var(--line); border-radius: var(--radius); box-shadow: var(--float); }
 .loc-field .resolving { position: absolute; inset-block: 0; inset-inline-end: 84px; display: grid; place-items: center; pointer-events: none; }
 .btn .bench-loader { color: inherit; }
 /* תמונה בטעינה: משטח רך עם מציין טעינה, והתמונה מופיעה בהדרגה */
@@ -202,12 +215,6 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .photo-modal-close { position: absolute; top: calc(12px + env(safe-area-inset-top)); inset-inline-start: 12px; }
 .sheet .photo-wrap img.photo { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; aspect-ratio: auto; object-fit: cover; border: 0; border-radius: 0; opacity: 0; transition: opacity .25s; }
 .photo-wrap.loaded img.photo { opacity: 1; }
-/* כרטיס שגיאה (למשל כשלא הצלחנו לטעון את הספסלים) */
-.error-card { position: absolute; z-index: 650; top: 12px; left: 50%; transform: translateX(-50%); width: min(92%, 340px); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 16px; text-align: center; background: #fff; border: var(--line); border-radius: var(--radius); box-shadow: var(--float); }
-.error-card img { height: 54px; width: auto; }
-.error-card h3 { font-size: 18px; }
-.error-card p { margin: 0; font-size: 15px; color: var(--ink-soft); }
-.error-card .btn { margin-top: 4px; }
 
 /* מסך תקלה לא צפויה */
 .crash { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; background: var(--paper); }
