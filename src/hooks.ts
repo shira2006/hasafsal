@@ -55,7 +55,7 @@ export type View = "map" | "about";
 
 /** ניווט פשוט לפי hash (#/about), כך שכפתור "אחורה" עובד ואין צורך בהגדרות שרת. */
 export function useView(): View {
-  const get = (): View => (location.hash === "#/about" ? "about" : "map");
+  const get = (): View => (location.hash === "#/about" ? "about" : "map"); // גם #/b/<id> (קישור לספסל) הוא תצוגת מפה
   const [view, setView] = useState<View>(get);
   useEffect(() => {
     const on = () => setView(get());

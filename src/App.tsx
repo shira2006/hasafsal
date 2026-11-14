@@ -11,7 +11,9 @@ import BenchLoader from "./components/BenchLoader";
 import { useDelayedFlag, useGeolocation, useMinVisible, useView, type LatLng } from "./hooks";
 import UpdateSheet from "./components/UpdateSheet";
 import LeftoverDialog from "./components/LeftoverDialog";
-import { createItem, fetchItemsInBounds, removeItem, replaceItem, subscribeItems } from "./lib/items";
+import ShareDialog from "./components/ShareDialog";
+import { itemIdFromHash } from "./lib/share";
+import { createItem, fetchItemById, fetchItemsInBounds, removeItem, replaceItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
 import type { Bounds, Item } from "./types";
@@ -33,6 +35,8 @@ export default function App() {
   const [dragging, setDragging] = useState(false); // מצב גרירה: אפשר להזיז את הלב על המפה
   const [askLeftover, setAskLeftover] = useState<Item | null>(null); // אחרי "לקחתי": נשאר משהו על הספסל?
   const [updating, setUpdating] = useState<{ item: Item; mode: "took" | "added" } | null>(null); // עדכון ספסל קיים
+  const [share, setShare] = useState<{ id: string; message: string } | null>(null); // אחרי פרסום/עדכון: הצעה לשתף את הספסל
+  const [openedViaLink] = useState(() => itemIdFromHash() !== null); // נכנסו מקישור לספסל: לא מזיזים את המפה למיקום שלנו
   const [focus, setFocus] = useState<Focus | null>(null);
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
@@ -132,10 +136,10 @@ export default function App() {
     const { item, mode } = updating;
     tookByMe.current.add(item.id); // המחיקה של הישן היא שלנו: בלי הודעה נוספת
     try {
-      await replaceItem(item, p);
+      const id = await replaceItem(item, p);
       setUpdating(null);
       setSelectedId(null);
-      toast.success(mode === "took" ? "תתחדש/י! תודה שהשארת משהו לאחרים" : "תודה! הספסל עודכן");
+      setShare({ id, message: mode === "took" ? "תתחדש/י! תודה שהשארת משהו לאחרים" : "תודה! הספסל עודכן" });
     } catch (e) {
       tookByMe.current.delete(item.id);
       toast.error(friendlyError(e, "לא הצלחנו לעדכן את הספסל. נסו שוב"));
@@ -161,13 +165,37 @@ export default function App() {
     if (!pick) return;
     try {
       // שומרים את הכתובת רק אם כבר זוהתה (לא את הטקסט הכללי "המיקום הנוכחי")
-      await createItem({ ...p, address: pickAddress, lat: pick[0], lng: pick[1] });
+      const id = await createItem({ ...p, address: pickAddress, lat: pick[0], lng: pick[1] });
       closeAdd();
-      toast.success("מלכ/ה כבר נדאג למצוא לפריט בית חדש");
+      setShare({ id, message: "מלכ/ה כבר נדאג למצוא לפריט בית חדש" });
     } catch (e) { toast.error(friendlyError(e, "לא הצלחנו לפרסם את הפריט. נסו שוב")); }
   }
 
   const focusOn = (pos: LatLng) => setFocus((f) => ({ pos, n: (f?.n ?? 0) + 1 }));
+
+  // קישור שיתוף (#/b/<id>): פותחים את הספסל ומרכזים עליו את המפה
+  useEffect(() => {
+    const open = async () => {
+      const id = itemIdFromHash();
+      if (!id) return;
+      history.replaceState(null, "", "#/"); // שרענון לא יפתח אותו שוב
+      try {
+        const it = await fetchItemById(id);
+        if (!it) { toast.info("הספסל הזה כבר לא כאן, כנראה שמישהו כבר לקח אותו"); return; }
+        setItems((p) => new Map(p).set(it.id, it));
+        closeAdd();
+        setUpdating(null);
+        setAskLeftover(null);
+        setSelectedId(it.id);
+        focusOn([it.lat, it.lng]);
+      } catch (e) {
+        toast.error(friendlyError(e, "לא הצלחנו לפתוח את הספסל"));
+      }
+    };
+    open();
+    window.addEventListener("hashchange", open);
+    return () => window.removeEventListener("hashchange", open);
+  }, [toast]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ברירת המחדל: המיקום הנוכחי. אפשר לשנות בגרירת הסמן או בחיפוש כתובת.
   function startAdd() {
@@ -245,6 +273,7 @@ export default function App() {
             selectedId={selectedId}
             focus={focus}
             dragMode={dragging}
+            skipFirstCenter={openedViaLink}
             onPickMove={onPickMove}
             onSelect={(id) => {
               closeAdd();
@@ -302,6 +331,7 @@ export default function App() {
           />
         )}
       </div>
+      {share && <ShareDialog itemId={share.id} message={share.message} onClose={() => setShare(null)} />}
       {askLeftover && (
         <LeftoverDialog
           onEmpty={() => { const it = askLeftover; setAskLeftover(null); leave(it, "תתחדש/י!", "success"); }}
