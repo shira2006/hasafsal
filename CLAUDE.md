@@ -6,7 +6,10 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - Map around the user's location with heart pins for items.
 - Item view: photo (tap = full-size modal), description, location card (address, distance, "ניווט לשם"), and the main action "לקחתי" (deletes the item for everyone via Realtime).
 - Add flow ("מצאת ספסל?"): photo (optional), one description (items + where exactly), location (default current location; type an address, or choose on the map). A photo or a description is required.
-- Mission page ("המשימה שלנו", `#/about`) with the story and a suggestions form (stored in `suggestions`, readable only in Supabase Studio).
+- "הצעות לחידושים" page (`#/about`; navbar tab + page title) with a short story and a suggestions form (stored in the `suggestions` table in Supabase, no email/notification; readable only in Supabase Studio, not through the public API).
+- Item view also has "זה לא כאן" (drawn sad-face SVG) next to "לקחתי": removes the item for everyone, like "לקחתי", with a different message.
+- On touch devices the add flow offers separate camera ("צילום", `capture`) and gallery buttons; on desktop one button.
+- PWA/install look: manifest + `<meta theme-color>` use the cream colour (#ffefd6); icons in `public/icons` are generated from the logo with `tools/make-icons.cjs` (not part of the build). `index.html` contains an inline bench-drawing loader shown until React mounts (replaced by the app).
 - All UI text is Hebrew, RTL. Tone: friendly, neighbourly. No emoji as UI icons (use SVG).
 
 ## Stack and architecture
