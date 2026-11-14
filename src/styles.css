@@ -50,9 +50,9 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .navbar .spacer { flex: 1; }
 /* לשוניות: בלי מסגרת. רק העמוד הנוכחי מודגש. */
 .tabs { display: flex; gap: 4px; }
-.tabs a { padding: 7px 14px; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; }
+.tabs a { padding: 6px 14px; border: 2px solid transparent; border-radius: 8px; color: var(--ink); text-decoration: none; font-size: 16px; }
 .tabs a:hover { background: rgba(59, 74, 82, .07); }
-.tabs a[aria-current="page"] { background: var(--peach); }
+.tabs a[aria-current="page"] { background: var(--peach); border-color: var(--ink); }
 
 /* ---------- כפתורים ---------- */
 .btn { color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1; text-align: center; text-decoration: none; padding: 11px 18px; border-radius: var(--radius); border: var(--line); background: var(--peach); font-size: 16px; cursor: pointer; }
@@ -84,6 +84,13 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .head-actions { display: flex; align-items: center; gap: 8px; }
 .sheet-head .close { position: static; flex-shrink: 0; }
 
+/* גיליון פריט: הפעולות צמודות לתחתית (גם כשצריך לגלול), ו"לקחתי" הוא הכפתור המרכזי */
+.item-sheet { padding-bottom: 0; }
+.item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); }
+.btn.nav-btn { flex: none; justify-content: space-between; }
+.nav-btn .dist { font-size: 14px; color: var(--ink-soft); }
+.btn.took { flex: none; padding: 15px 18px; font-size: 19px; }
+
 /* שדות הטופס */
 .field { display: flex; flex-direction: column; gap: 6px; }
 /* כותרות הסעיפים: קצת יותר בולטות. לגופן יש משקל אחד, ולכן מעבים במעט עם קו מתאר דק */
@@ -104,7 +111,9 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .loc-group textarea { margin-top: -2px; border-radius: 0 0 var(--radius) var(--radius); }
 .loc-icons { position: absolute; inset-block: 2px; inset-inline-end: 4px; display: flex; align-items: center; gap: 2px; }
 .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: none; border: 0; color: var(--ink); cursor: pointer; }
-.icon-btn.on { background: var(--peach); }
+/* אייקון שנבחר: האייקון עצמו הופך לוורוד (בלי רקע) */
+.icon-btn.on { color: #e0527d; }
+.icon-btn.on svg { stroke-width: 2.6; }
 .icon-btn:disabled { opacity: .35; cursor: default; }
 
 /* במובייל התפריט הצף מוסתר בזמן שגיליון פתוח (הוא היה מוסתר מאחוריו) */
@@ -118,9 +127,7 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
   .sheet { position: relative; inset: auto; flex: 0 0 var(--panel-w); width: var(--panel-w); max-height: none; border-top: 0; border-radius: 0; border-inline-end: var(--line); padding: 22px 20px; order: -1; gap: 14px; }
   .sheet img { max-height: 280px; }
   .sheet h2 { font-size: 26px; }
-  .sheet > h2 { padding-inline-end: 44px; }
-  .close { top: 16px; }
-  .sheet-head .close { top: auto; }
+  .item-sheet .actions { padding-bottom: 22px; }
 }
 
 /* ---------- דף "המשימה שלנו" ---------- */

@@ -5,6 +5,7 @@ interface Props {
   debugInfo?: string; // לפיתוח בלבד: קואורדינטות, דיוק ומקור המיקום
   locationLabel: string;
   isCurrent: boolean;
+  isMapPick: boolean; // המיקום נבחר על המפה (גרירה או הקשה)
   canUseMyLocation: boolean;
   onSubmit: (p: { blob: Blob | null; description: string; locationNote: string }) => Promise<void>;
   onSearch: (query: string) => Promise<boolean>;
@@ -14,7 +15,7 @@ interface Props {
   onError: (msg: string) => void;
 }
 
-export default function AddSheet({ debugInfo, locationLabel, isCurrent, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
+export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPick, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
@@ -100,7 +101,7 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, canUseMy
                   <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
                 </svg>
               </button>
-              <button type="button" className="icon-btn" onClick={onStartDrag} aria-label="בחירה על המפה" title="בחירה על המפה">
+              <button type="button" className={`icon-btn${isMapPick ? " on" : ""}`} onClick={onStartDrag} aria-label="בחירה על המפה" title="בחירה על המפה">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                   <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" /><path d="M9 4v13.5M15 6.5V20" />
                 </svg>
@@ -109,10 +110,10 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, canUseMy
           </form>
           <textarea
             id="note"
-            aria-label="תיאור קצר על המיקום"
+            aria-label="פרטו על המיקום"
             rows={2}
             maxLength={300}
-            placeholder="תיאור קצר על המיקום, יעזור למי שצריך למצוא"
+            placeholder="פרטו על המיקום"
             value={locationNote}
             onChange={(e) => setLocationNote(e.target.value)}
           />
