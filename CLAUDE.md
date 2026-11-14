@@ -43,7 +43,7 @@ npm run db:start     # local Supabase (Docker must be running)
 npm run db:status    # API URL and publishable key for .env.local
 npm run db:reset     # rebuild local DB from ALL migrations + seed (also proves they apply from scratch)
 npm run db:stop
-npm run dev          # http://localhost:5173/hasafsal/
+npm run dev          # http://localhost:5173/
 npm run build        # tsc --noEmit + vite build
 npm run db:push:dry  # preview production migrations (needs `npx supabase login` + `link`)
 npm run db:push      # PRODUCTION (supabase db push --remote). Never run without asking.
@@ -71,5 +71,5 @@ About 200 concurrent Realtime connections, 1 GB storage. Public OpenStreetMap ti
 2. Spam/abuse protection and a way to report an item.
 3. Error monitoring (Sentry) and privacy-friendly analytics.
 4. Before public launch: a proper map-tile provider and geocoder (MapTiler/Mapbox) with live address suggestions in Hebrew.
-5. Custom domain: change `base` in `vite.config.ts` and `start_url`/`scope` in `public/manifest.webmanifest` from `/hasafsal/` to `/`.
+5. Custom domain: change `base` in `vite.config.ts` and `start_url`/`scope` in `public/manifest.webmanifest` (done: the site is served from the root of hasafsal.net).
 6. Generate DB types with `supabase gen types typescript` instead of hand-written `src/types.ts`.

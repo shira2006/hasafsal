@@ -1,8 +1,8 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// base מתאים ל-GitHub Pages בכתובת /hasafsal/
+// האתר מוגש מהדומיין hasafsal.net (שורש), ולכן base הוא "/"
 export default defineConfig({
   plugins: [react()],
-  base: "/hasafsal/",
+  base: "/",
 });

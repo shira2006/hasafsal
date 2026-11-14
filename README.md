@@ -31,7 +31,7 @@ npm install
 npm run db:start        # מרים Supabase מקומי (בפעם הראשונה לוקח כמה דקות)
 npm run db:status       # מציג API URL ואת ה-publishable/anon key
 cp .env.example .env.local   # ומדביקים את הערכים מהפקודה הקודמת
-npm run dev             # http://localhost:5173/hasafsal/
+npm run dev             # http://localhost:5173/
 ```
 - Studio (ממשק למסד הנתונים): http://127.0.0.1:54323
 - איפוס מסד מקומי לפי המיגרציות והדמו: `npm run db:reset`
