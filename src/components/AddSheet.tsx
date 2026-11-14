@@ -19,9 +19,12 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
   const [description, setDescription] = useState("");
   const [locationNote, setLocationNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [query, setQuery] = useState("");
+  const [locText, setLocText] = useState(locationLabel); // שדה המיקום: מציג את המיקום הנבחר, ואפשר להקליד בו כתובת
   const [searching, setSearching] = useState(false);
   const [notFound, setNotFound] = useState(false);
+
+  // כשהמיקום משתנה (גרירה, חיפוש, חזרה למיקום נוכחי) השדה מציג את המיקום החדש
+  useEffect(() => { setLocText(locationLabel); setNotFound(false); }, [locationLabel]);
 
   // משחררים את כתובת התצוגה המקדימה כשהיא מוחלפת או כשהגיליון נסגר
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview); }, [preview]);
@@ -50,14 +53,13 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
 
   async function search(e: React.FormEvent) {
     e.preventDefault();
-    const q = query.trim();
-    if (!q || searching) return;
+    const q = locText.trim();
+    if (!q || q === locationLabel || searching) return;
     setSearching(true);
     setNotFound(false);
     try {
       const ok = await onSearch(q);
       setNotFound(!ok);
-      if (ok) setQuery("");
     } catch (err) {
       onError(err instanceof Error ? err.message : "חיפוש כתובת נכשל");
     } finally {
@@ -68,31 +70,44 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
   return (
     <div className="sheet">
       <div className="sheet-head">
-        <h2>משהו לשכנים?</h2>
+        <h2>מצאת ספסל?</h2>
         <div className="head-actions">
           <button className="btn small" disabled={!canPublish} onClick={publish}>{busy ? "מעלים..." : "פרסום"}</button>
           <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
         </div>
       </div>
 
-      {/* מיקום: למעלה. ברירת המחדל היא המיקום הנוכחי. */}
+      {/* מיקום: שדה אחד שאפשר להקליד בו כתובת, כפתור חזרה למיקום נוכחי, וגרירה על המפה */}
       <div className="field">
-        <span className="label">מיקום</span>
+        <label className="label" htmlFor="addr">מיקום</label>
         <div className="loc-row">
-          <p className="loc-now">
-            <strong>{locationLabel}</strong>
-            {canUseMyLocation && !isCurrent && <button type="button" className="link" onClick={onUseMyLocation}>מיקום נוכחי</button>}
-          </p>
-          <button type="button" className="btn small secondary" onClick={onStartDrag}>גרירה על המפה</button>
+          <form className="loc-field" onSubmit={search}>
+            <input
+              id="addr"
+              type="search"
+              enterKeyHint="search"
+              placeholder="הקלידו כתובת"
+              value={locText}
+              onChange={(e) => { setLocText(e.target.value); setNotFound(false); }}
+              onFocus={(e) => e.currentTarget.select()}
+              onBlur={() => { if (!searching) setLocText(locationLabel); }}
+            />
+            {canUseMyLocation && !isCurrent && (
+              <button type="button" className="icon-btn" onClick={onUseMyLocation} aria-label="מיקום נוכחי" title="מיקום נוכחי">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+                  <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
+                </svg>
+              </button>
+            )}
+          </form>
+          <button type="button" className="btn small secondary nowrap" onClick={onStartDrag}>גרירה על המפה</button>
         </div>
-        <form className="loc-search" onSubmit={search}>
-          <input id="addr" type="search" aria-label="חיפוש כתובת" placeholder="חיפוש כתובת" value={query} onChange={(e) => { setQuery(e.target.value); setNotFound(false); }} />
-          <button className="btn small secondary" type="submit" disabled={!query.trim() || searching}>{searching ? "מחפשים..." : "חיפוש"}</button>
-        </form>
         {notFound && <p className="hint err">לא מצאנו את הכתובת. אפשר לנסח אחרת, או לגרור על המפה.</p>}
-        <label className="label" htmlFor="note">איך מוצאים אותו?</label>
-        <textarea id="note" rows={2} maxLength={300} placeholder="למשל: על הספסל ליד הכניסה לגינה" value={locationNote} onChange={(e) => setLocationNote(e.target.value)} />
-        <p className="hint">לא חובה, אבל זה עוזר לשכנים למצוא את הפריט.</p>
+      </div>
+
+      <div className="field">
+        <label className="label" htmlFor="note">פירוט על המיקום</label>
+        <textarea id="note" rows={2} maxLength={300} placeholder="ליד הגינה. מאוד יעזור למי שצריך למצוא" value={locationNote} onChange={(e) => setLocationNote(e.target.value)} />
       </div>
 
       {/* תמונה: בלי תמונה רואים רק כפתור הוספה */}
@@ -118,9 +133,8 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
       </div>
 
       <div className="field">
-        <label className="label" htmlFor="desc">מה משאירים? <span className="req">*</span></label>
+        <label className="label" htmlFor="desc">תיאור הפריט <span className="req">*</span></label>
         <textarea id="desc" rows={2} placeholder="למשל: כיסא עץ במצב טוב" value={description} onChange={(e) => setDescription(e.target.value)} />
-        <p className="hint">* תמונה או תיאור, אחד מהם מספיק.</p>
       </div>
     </div>
   );
