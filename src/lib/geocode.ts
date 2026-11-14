@@ -16,7 +16,7 @@ type Hit = { lat: string; lon: string; name?: string; display_name: string; addr
 function labelOf(r: Hit): string {
   const a = r.address ?? {};
   const street = [a.road, a.house_number].filter(Boolean).join(" ");
-  const city = a.city ?? a.town ?? a.village ?? a.suburb;
+  const city = (a.city ?? a.town ?? a.village ?? a.suburb)?.replace("תל־אביב–יפו", "תל אביב"); // קצר יותר, ואיך שאומרים בפועל
   return [street, city].filter(Boolean).join(", ") || r.name || r.display_name.split(",").slice(0, 2).join(",").trim();
 }
 

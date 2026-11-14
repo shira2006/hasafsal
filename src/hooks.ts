@@ -6,6 +6,11 @@ export type LatLng = [number, number];
 export function useGeolocation(onError: () => void) {
   const [pos, setPos] = useState<LatLng | null>(null);
   useEffect(() => {
+    // לפיתוח בלבד (לא נכלל בגרסת הפרודקשן): ‎?mockLoc=32.07,34.77‎ מדמה מיקום, כדי לבדוק בלי GPS
+    if (import.meta.env.DEV) {
+      const m = new URLSearchParams(location.search).get("mockLoc")?.split(",").map(Number);
+      if (m && m.length === 2 && m.every(Number.isFinite)) { setPos([m[0], m[1]]); return; }
+    }
     if (!("geolocation" in navigator)) return;
     const id = navigator.geolocation.watchPosition(
       (p) => setPos([p.coords.latitude, p.coords.longitude]),

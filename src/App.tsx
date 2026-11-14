@@ -8,6 +8,7 @@ import AboutPage from "./components/AboutPage";
 import { useGeolocation, useToast, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
+import { distanceMeters } from "./lib/geo";
 import type { Bounds, Item } from "./types";
 
 const CURRENT_LABEL = "המיקום הנוכחי";
@@ -110,11 +111,19 @@ export default function App() {
   useEffect(() => {
     if (!pick || pickSource === "search") return;
     const ac = new AbortController();
-    const t = setTimeout(() => {
-      reverseGeocode(pick[0], pick[1], ac.signal).then((a) => { if (a) setPickAddress(a); }).catch(() => {});
-    }, 500);
-    return () => { clearTimeout(t); ac.abort(); };
+    let retry: ReturnType<typeof setTimeout> | undefined;
+    const lookup = (again: boolean) =>
+      reverseGeocode(pick[0], pick[1], ac.signal)
+        .then((a) => { if (a) setPickAddress(a); })
+        .catch(() => { if (again && !ac.signal.aborted) retry = setTimeout(() => lookup(false), 2000); }); // ניסיון חוזר אחד
+    const t = setTimeout(() => lookup(true), 500);
+    return () => { clearTimeout(t); clearTimeout(retry); ac.abort(); };
   }, [pick, pickSource]);
+
+  // "מיקום נוכחי" ממשיך לעקוב אחרי המיקום העדכני: הקריאה הראשונה של ה-GPS (בעיקר במחשב) לרוב גסה ומשתפרת אחר כך.
+  useEffect(() => {
+    if (pick && me && pickSource === "current" && distanceMeters(pick, me) > 15) setPick(me);
+  }, [me, pick, pickSource]);
 
   const pickLabel = pickAddress ?? (pickSource === "current" ? CURRENT_LABEL : "מיקום שנבחר במפה");
 
@@ -130,9 +139,9 @@ export default function App() {
 
   function backToCurrentLocation() {
     if (!me) return;
+    if (pickSource !== "current") setPickAddress(null); // אם כבר במיקום הנוכחי, שומרים את הכתובת שכבר ידועה
     setPick(me);
     setPickSource("current");
-    setPickAddress(null);
     focusOn(me);
   }
 

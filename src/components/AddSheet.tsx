@@ -80,18 +80,11 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
       {/* מיקום: שדה אחד שאפשר להקליד בו כתובת, כפתור חזרה למיקום נוכחי, וגרירה על המפה */}
       <div className="field">
         <label className="label" htmlFor="addr">מיקום</label>
-        <div className="loc-row">
+        {/* קבוצה אחת: כתובת (עם אייקוני מרכוז ומפה בתוך השדה) ומתחתיה תיאור קצר, כך שהכול מרגיש חלק אחד של "מיקום" */}
+        <div className="loc-group">
           <form className="loc-field" onSubmit={search}>
-            {isCurrent && (
-              <span className="lead" title="מיקום נוכחי" role="img" aria-label="מיקום נוכחי">
-                <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
-                  <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-                </svg>
-              </span>
-            )}
             <input
               id="addr"
-              className={isCurrent ? "has-lead" : undefined}
               type="search"
               enterKeyHint="search"
               placeholder="הקלידו כתובת"
@@ -100,22 +93,30 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
               onFocus={(e) => e.currentTarget.select()}
               onBlur={() => { if (!searching) setLocText(locationLabel); }}
             />
-            {canUseMyLocation && !isCurrent && (
-              <button type="button" className="icon-btn" onClick={onUseMyLocation} aria-label="מיקום נוכחי" title="מיקום נוכחי">
+            <div className="loc-icons">
+              <button type="button" className={`icon-btn${isCurrent ? " on" : ""}`} disabled={!canUseMyLocation} onClick={onUseMyLocation} aria-label="מיקום נוכחי" title="מיקום נוכחי">
                 <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
                   <circle cx="12" cy="12" r="6.5" /><circle cx="12" cy="12" r="1.8" fill="currentColor" stroke="none" /><path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
                 </svg>
               </button>
-            )}
+              <button type="button" className="icon-btn" onClick={onStartDrag} aria-label="בחירה על המפה" title="בחירה על המפה">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                  <path d="M3 6.5 9 4l6 2.5L21 4v13.5L15 20l-6-2.5L3 20z" /><path d="M9 4v13.5M15 6.5V20" />
+                </svg>
+              </button>
+            </div>
           </form>
-          <button type="button" className="btn small secondary nowrap" onClick={onStartDrag}>גרירה על המפה</button>
+          <textarea
+            id="note"
+            aria-label="תיאור קצר על המיקום"
+            rows={2}
+            maxLength={300}
+            placeholder="תיאור קצר על המיקום, יעזור למי שצריך למצוא"
+            value={locationNote}
+            onChange={(e) => setLocationNote(e.target.value)}
+          />
         </div>
-        {notFound && <p className="hint err">לא מצאנו את הכתובת. אפשר לנסח אחרת, או לגרור על המפה.</p>}
-      </div>
-
-      <div className="field">
-        <label className="label" htmlFor="note">פירוט על המיקום</label>
-        <textarea id="note" rows={2} maxLength={300} placeholder="ליד הגינה. מאוד יעזור למי שצריך למצוא" value={locationNote} onChange={(e) => setLocationNote(e.target.value)} />
+        {notFound && <p className="hint err">לא מצאנו את הכתובת. אפשר לנסח אחרת, או לבחור על המפה.</p>}
       </div>
 
       {/* תמונה: בלי תמונה רואים רק כפתור הוספה */}
