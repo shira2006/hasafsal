@@ -7,11 +7,31 @@ permissions:
   contents: read
   pages: write
   id-token: write
+# לא מבטלים הרצה שכבר מעדכנת את מסד הנתונים. הרצות חדשות מחכות בתור.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: deploy
+  cancel-in-progress: false
 jobs:
+  # 1) קודם מעדכנים את מסד הנתונים בענן לפי קובצי supabase/migrations.
+  #    אם זה נכשל, האתר לא עולה (כך האתר אף פעם לא רץ מול מסד נתונים שלא מוכן).
+  migrate:
+    runs-on: ubuntu-latest
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+      SUPABASE_PROJECT_ID: ${{ secrets.SUPABASE_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply new database migrations to production
+        run: npx supabase db push --remote="$SUPABASE_PROJECT_ID" --password "$SUPABASE_DB_PASSWORD" --yes
+  # 2) בונים את האתר
   build:
+    needs: migrate
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -24,6 +44,7 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist
+  # 3) מפרסמים
   deploy:
     needs: build
     runs-on: ubuntu-latest

@@ -41,20 +41,29 @@ npm run dev             # http://localhost:5173/hasafsal/
 ## תהליך עבודה
 1. עובדים בענפים שיוצאים מ-`dev`, ופותחים PR ל-`dev`.
 2. שינוי בסכמה = קובץ מיגרציה חדש: `npx supabase migration new <name>`. לא עורכים מיגרציות קיימות.
-3. כשמוכנים לשחרר: PR מ-`dev` ל-`main`. המיזוג מפרסם אוטומטית ל-GitHub Pages.
-4. מיגרציות חדשות ל-production מריצים ידנית (ראו למטה). הן לא רצות אוטומטית.
+3. כשמוכנים לשחרר: PR מ-`dev` ל-`main`. ב-PR רצה בדיקת CI: בנייה, ובדיקה שכל המיגרציות עולות נקי מאפס.
+4. המיזוג ל-`main` מפרסם אוטומטית: קודם מיגרציות ל-production, ואם הצליחו, בנייה ופרסום ל-GitHub Pages.
 
 ## עדכון מסד הנתונים בענן
+בדרך כלל לא צריך לעשות כלום: מיגרציות חדשות עולות ל-production אוטומטית במיזוג ל-`main` (ראו `.github/workflows/deploy.yml`).
+אם נכשלת המיגרציה, האתר לא מתפרסם. מכיוון שזה אוטומטי, כדאי לבדוק את קובצי המיגרציה ב-PR ולכתוב אותם כך שרק מוסיפים (עמודות וטבלאות), לא מוחקים.
+
+הרצה ידנית (חריג):
 ```
 npx supabase login
 npx supabase link --project-ref yhegdjejmrxhgdginerq
-npm run db:push
+npm run db:push:dry     # תצוגה מקדימה בלבד
+npm run db:push         # מעדכן את ה-production
 ```
-מיגרציית הפתיחה ניתנת להרצה חוזרת, ולכן בטוח להריץ אותה גם על הפרויקט שכבר הוגדר ידנית.
+שימו לב: בגרסה 3 של ה-CLI, `supabase db push` בלי `--remote` פועל על המסד המקומי. הסקריפטים ב-`package.json` כבר כוללים `--remote`.
 
 ## הגדרות חד-פעמיות ב-GitHub
 - Settings -> Pages -> Source: **GitHub Actions**
-- מומלץ: Settings -> Branches -> להגן על `main` ו-`dev` (PR נדרש, בדיקת CI חייבת לעבור)
+- Settings -> Secrets and variables -> Actions -> New repository secret (שלושה סודות, כדי שהפריסה תוכל לעדכן את מסד הנתונים):
+  - `SUPABASE_ACCESS_TOKEN`: טוקן אישי מ-Supabase (Account -> Access Tokens)
+  - `SUPABASE_DB_PASSWORD`: סיסמת מסד הנתונים של פרויקט ה-production
+  - `SUPABASE_PROJECT_ID`: `yhegdjejmrxhgdginerq`
+- מומלץ: Settings -> Branches -> להגן על `main` ו-`dev` (PR נדרש, בדיקות CI חייבות לעבור)
 
 ## הצעד הבא
 התחברות עם Google (`src/lib/auth.ts`) והחלפת מדיניות ה-RLS לתנאים עם `auth.uid()`.

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 20 324 168" role="img" aria-label="הספסל">
+  <g fill="none" stroke="#3B4A52" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M34 34 L286 30 L288 92 L36 96 Z"/>
+    <path d="M37 38 L283 34" stroke-width="1.4" opacity=".6"/>
+    <path d="M38 92 L285 88" stroke-width="1.4" opacity=".6"/>
+    <path d="M22 112 L298 108 L304 132 L20 138 Z"/>
+    <path d="M26 116 L296 112" stroke-width="1.4" opacity=".6"/>
+    <path d="M52 138 L46 178"/><path d="M54 138 L50 178" stroke-width="1.6" opacity=".7"/>
+    <path d="M268 136 L274 178"/><path d="M266 136 L270 178" stroke-width="1.6" opacity=".7"/>
+    <path d="M50 96 L52 112"/><path d="M270 92 L268 110"/>
+  </g>
+  <path d="M286 62 C274 53 266 46 266 37 C266 31 271 27 276 27 C280 27 284 29 286 33 C288 29 292 27 296 27 C301 27 306 31 306 37 C306 46 298 53 286 62 Z" fill="#EE7D9C" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>
+</svg>

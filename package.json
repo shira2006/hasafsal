@@ -11,7 +11,8 @@
     "db:stop": "supabase stop",
     "db:status": "supabase status",
     "db:reset": "supabase db reset",
-    "db:push": "supabase db push"
+    "db:push": "supabase db push --remote",
+    "db:push:dry": "supabase db push --remote --dry-run"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.0",
