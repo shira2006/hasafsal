@@ -41,6 +41,7 @@ h1, h2, h3 { font-weight: 400; margin: 0; }
 
 /* ---------- סרגל עליון ---------- */
 .navbar { display: flex; align-items: center; gap: 12px; height: var(--nav-h); padding: 6px 14px; padding-top: calc(6px + env(safe-area-inset-top)); background: var(--cream); border-bottom: var(--line); z-index: 800; flex-shrink: 0; }
+.navbar > a:first-child { display: block; height: 100%; }
 .navbar .logo { display: block; height: 100%; width: auto; }
 .navbar .spacer { flex: 1; }
 
@@ -50,7 +51,7 @@ h1, h2, h3 { font-weight: 400; margin: 0; }
 .btn.secondary { background: var(--sage); }
 .btn.primary { background: var(--peach); }
 .btn:disabled { opacity: .5; cursor: default; }
-.pill { display: inline-flex; align-items: center; border: var(--line); border-radius: 999px; padding: 5px 14px; background: var(--lilac); text-decoration: none; font-size: 15px; white-space: nowrap; cursor: pointer; }
+.pill { color: var(--ink); display: inline-flex; align-items: center; border: var(--line); border-radius: 999px; padding: 5px 14px; background: var(--lilac); text-decoration: none; font-size: 15px; white-space: nowrap; cursor: pointer; }
 
 /* ---------- תפריט צף ---------- */
 .fabs { position: absolute; z-index: 600; inset-inline-end: 14px; bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
@@ -82,6 +83,21 @@ h1, h2, h3 { font-weight: 400; margin: 0; }
   .sheet h2 { font-size: 26px; padding-inline-end: 44px; }
   .close { top: 16px; }
 }
+
+/* ---------- דף "המשימה שלנו" ---------- */
+.page { position: absolute; inset: 0; z-index: 1500; overflow: auto; background: var(--paper); }
+.page-inner { max-width: 640px; margin: 0 auto; padding: 28px 20px calc(40px + env(safe-area-inset-bottom)); }
+.page h1 { font-size: 36px; line-height: 1.2; margin-bottom: 14px; }
+.page p { font-size: 18px; margin: 0 0 14px; }
+.page .meta { color: var(--ink-soft); font-size: 15px; }
+.suggest { margin-top: 28px; padding: 18px; background: var(--butter); border: var(--line); border-radius: 20px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 10px; }
+.suggest h2 { font-size: 24px; }
+.suggest p { margin: 0; }
+.suggest textarea { width: 100%; padding: 10px; border: var(--line); border-radius: 14px; background: #fff; resize: vertical; font-size: 16px; }
+.suggest-row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.suggest-row .btn { flex: 0 0 auto; }
+.suggest .err { color: #9b2c2c; }
+.page .credit { margin-top: 28px; font-size: 13px; color: var(--ink-soft); }
 
 /* ---------- הודעות וסמנים ---------- */
 .toast { position: fixed; z-index: 2000; top: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-size: 15px; max-width: 90%; box-shadow: var(--shadow); }

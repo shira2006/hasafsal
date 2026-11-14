@@ -18,6 +18,20 @@ export function useGeolocation(onError: () => void) {
   return pos;
 }
 
+export type View = "map" | "about";
+
+/** ניווט פשוט לפי hash (#/about), כך שכפתור "אחורה" עובד ואין צורך בהגדרות שרת. */
+export function useView(): View {
+  const get = (): View => (location.hash === "#/about" ? "about" : "map");
+  const [view, setView] = useState<View>(get);
+  useEffect(() => {
+    const on = () => setView(get());
+    window.addEventListener("hashchange", on);
+    return () => window.removeEventListener("hashchange", on);
+  }, []);
+  return view;
+}
+
 export function useToast() {
   const [msg, setMsg] = useState<string | null>(null);
   useEffect(() => {

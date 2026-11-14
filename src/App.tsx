@@ -4,7 +4,8 @@ import ItemSheet from "./components/ItemSheet";
 import AddSheet from "./components/AddSheet";
 import Navbar from "./components/Navbar";
 import FloatingMenu from "./components/FloatingMenu";
-import { useGeolocation, useToast, type LatLng } from "./hooks";
+import AboutPage from "./components/AboutPage";
+import { useGeolocation, useToast, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import type { Bounds, Item } from "./types";
 
@@ -12,6 +13,7 @@ const errText = (e: unknown) => (e instanceof Error ? e.message : (e as { messag
 
 export default function App() {
   const [toast, setToast] = useToast();
+  const view = useView();
   const me = useGeolocation(() => setToast("אין גישה למיקום. אשרו מיקום בדפדפן"));
   const [items, setItems] = useState<Map<string, Item>>(new Map());
   const [bounds, setBounds] = useState<Bounds | null>(null);
@@ -87,8 +89,10 @@ export default function App() {
 
   return (
     <div className="app">
-      <Navbar />
+      <Navbar view={view} />
       <div className={`stage${selected || pick ? " has-sheet" : ""}`}>
+        {/* הדף מוצג מעל המפה (והמפה נשארת טעונה), כדי שהמיקום והזום לא יאבדו */}
+        {view === "about" && <AboutPage />}
         <div className="map-area">
           <MapView
             items={[...items.values()]}
