@@ -17,7 +17,9 @@ const errText =(e: unknown) => (e instanceof Error ? e.message : (e as { message
 export default function App() {
   const [toast, setToast] = useToast();
   const view = useView();
-  const me = useGeolocation(() => setToast("אין גישה למיקום. אשרו מיקום בדפדפן"));
+  const { pos: me, accuracy: meAccuracy } = useGeolocation(() => setToast("אין גישה למיקום. אשרו מיקום בדפדפן"));
+  const meAccuracyRef = useRef<number | null>(null);
+  meAccuracyRef.current = meAccuracy;
   const [items, setItems] = useState<Map<string, Item>>(new Map());
   const [bounds, setBounds] = useState<Bounds | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -112,8 +114,10 @@ export default function App() {
     if (!pick || pickSource === "search") return;
     const ac = new AbortController();
     let retry: ReturnType<typeof setTimeout> | undefined;
+    // כשהמיקום נלקח מה-GPS והדיוק נמוך, מציגים רחוב ועיר בלי מספר בית (המספר יכול להיות של בניין אחר)
+    const approximate = pickSource === "current" && (meAccuracyRef.current ?? 0) > 30;
     const lookup = (again: boolean) =>
-      reverseGeocode(pick[0], pick[1], ac.signal)
+      reverseGeocode(pick[0], pick[1], ac.signal, { approximate })
         .then((a) => { if (a) setPickAddress(a); })
         .catch(() => { if (again && !ac.signal.aborted) retry = setTimeout(() => lookup(false), 2000); }); // ניסיון חוזר אחד
     const t = setTimeout(() => lookup(true), 500);

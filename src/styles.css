@@ -31,6 +31,8 @@ body { font-family: "Varela Round", system-ui, "Segoe UI", Arial, sans-serif; fo
 button, textarea, input { font-family: inherit; color: inherit; }
 h1, h2, h3 { font-weight: 400; margin: 0; }
 :focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+/* בשדות טקסט אין מסגרת פוקוס חיצונית (היא יוצרת מראה כפול ונחתכת בשדות המחוברים). במקומה, קו פנימי עבה יותר. */
+input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0 0 0 1.5px var(--ink); }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
 /* ---------- מבנה האפליקציה ---------- */
