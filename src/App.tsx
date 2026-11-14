@@ -7,7 +7,8 @@ import FloatingMenu from "./components/FloatingMenu";
 import AboutPage from "./components/AboutPage";
 import { useToasts } from "./components/Toasts";
 import { friendlyError } from "./lib/errors";
-import { useGeolocation, useView, type LatLng } from "./hooks";
+import BenchLoader from "./components/BenchLoader";
+import { useDelayedFlag, useGeolocation, useMinVisible, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
@@ -18,7 +19,7 @@ const CURRENT_LABEL = "המיקום הנוכחי";
 export default function App() {
   const toast = useToasts();
   const view = useView();
-  const { pos: me, accuracy: meAccuracy, locating } = useGeolocation(() => toast.info("אין גישה למיקום. אשרו מיקום בדפדפן"));
+  const { pos: me, accuracy: meAccuracy } = useGeolocation(() => toast.info("אין גישה למיקום. אשרו מיקום בדפדפן"));
   const meAccuracyRef = useRef<number | null>(null);
   meAccuracyRef.current = meAccuracy;
   const [items, setItems] = useState<Map<string, Item>>(new Map());
@@ -33,8 +34,12 @@ export default function App() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false);
   const [lookingUp, setLookingUp] = useState(false); // מחפשים כתובת למיקום הנבחר
-  const viewRef = useRef(view);
-  viewRef.current = view;
+  // מציין "טוענים ספסלים...": רק אם הטעינה מתארכת (כמו ב-main), לא כשהאפליקציה עצמה מזיזה את המפה (למשל בלחיצה על לב),
+  // ואחרי שהוצג הוא נשאר עד שהאנימציה שלו מסתיימת
+  const showLoading = useDelayedFlag(loadingItems, 400);
+  const [announceLoad, setAnnounceLoad] = useState(true);
+  const announceNext = useRef(true); // הטעינה הבאה נובעת מהזזה של המשתמש (או מהטעינה הראשונה)
+  const pillVisible = useMinVisible(showLoading && announceLoad && view === "map", 2000);
   const boundsRef = useRef<Bounds | null>(null);
   boundsRef.current = bounds;
   const selectedIdRef = useRef<string | null>(null);
@@ -46,15 +51,15 @@ export default function App() {
   useEffect(() => {
     if (!bounds) return;
     let cancelled = false; // תשובה ישנה לא דורסת תשובה חדשה יותר
-    setLoadingItems(true); // מיד כשהמפה זזה: "מחפשים ספסלים באזור..."
+    setAnnounceLoad(announceNext.current);
+    announceNext.current = false; // טעינות חוזרות (חזרה לחזית, חיבור שחזר) שקטות
     const t = setTimeout(async () => {
+      setLoadingItems(true);
       try {
         const list = await fetchItemsInBounds(bounds);
         if (cancelled) return;
         setItems(new Map(list.map((i) => [i.id, i])));
         setLoadingItems(false);
-        // נמצאו ספסלים: ההתראה פשוט נעלמת. לא נמצאו: אומרים את זה (כדי שיהיה ברור שהמפה לא תקועה)
-        if (list.length === 0 && viewRef.current === "map") toast.info("לא נמצאו ספסלים באזור זה");
       } catch (e) {
         if (cancelled) return;
         setLoadingItems(false);
@@ -63,21 +68,6 @@ export default function App() {
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
   }, [bounds, refreshKey, toast]);
-
-  // התראת "מחפשים ספסלים באזור...": בכל הזזה של המפה, עד שהתשובה מגיעה (מוצגת לפחות רגע, כדי שלא תהבהב)
-  const searchingBenches = loadingItems && view === "map";
-  useEffect(() => {
-    if (!searchingBenches) return;
-    return toast.loading("מחפשים ספסלים באזור...");
-  }, [searchingBenches, toast]);
-
-  // התראת "מחפשים את המיקום שלך...": עד שהמיקום מתקבל. לא נשארת לנצח אם המשתמש לא ענה על בקשת ההרשאה.
-  useEffect(() => {
-    if (!locating) return;
-    const done = toast.loading("מחפשים את המיקום שלך...");
-    const t = setTimeout(done, 15000);
-    return () => { clearTimeout(t); done(); };
-  }, [locating, toast]);
 
   // מתריעים כשהחיבור נופל, ובחזרתו טוענים מחדש
   useEffect(() => {
@@ -119,7 +109,11 @@ export default function App() {
     return () => { document.removeEventListener("visibilitychange", onVis); stop(); };
   }, []);
 
-  const onBounds = useCallback((b: Bounds) => setBounds(b), []);
+  // byApp: המפה זזה בגלל האפליקציה עצמה (לחיצה על לב, מרכוז, פתיחת פאנל), לא בגלל גרירה או זום של המשתמש
+  const onBounds = useCallback((b: Bounds, byApp: boolean) => {
+    announceNext.current = !byApp;
+    setBounds(b);
+  }, []);
   const selected = selectedId ? items.get(selectedId) ?? null : null;
 
   // "לקחתי" ו"זה לא כאן": בשני המקרים הפריט יורד מהמפה אצל כולם. ההודעה שונה.
@@ -241,6 +235,10 @@ export default function App() {
             onAdd={startAdd}
             onRecenter={() => (me ? setRecenter((n) => n + 1) : toast.info("מחפשים מיקום..."))}
           />
+          {/* טעינת ספסלים: מציין קטן בראש המפה, רק אם הטעינה מתארכת. הציור שלו משלים את עצמו עד הסוף. */}
+          {pillVisible && (
+            <div className="map-status"><BenchLoader size={26} once label="טוענים ספסלים..." showLabel /></div>
+          )}
           {dragging && (
             <div className="drag-bar" role="status">
               <span>גוררים את הלב, או מקישים על המפה, למקום המדויק</span>

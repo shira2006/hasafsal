@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 import L from "leaflet";
 import { MapContainer, Marker, TileLayer, useMap, useMapEvents } from "react-leaflet";
 import type { Bounds, Item } from "../types";
@@ -15,11 +15,13 @@ const pinIconSelected = heartIcon("sel");
 const pinIconPick = heartIcon("sel pick");
 const meIcon = L.divIcon({ className: "", html: '<div class="me"></div>', iconSize: [16, 16], iconAnchor: [8, 8] });
 
-function Events({ onBounds }: { onBounds: (b: Bounds) => void }) {
+function Events({ onBounds, appMove }: { onBounds: (b: Bounds, byApp: boolean) => void; appMove: React.MutableRefObject<boolean> }) {
   const map = useMap();
   const emit = () => {
     const b = map.getBounds();
-    onBounds({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() });
+    const byApp = appMove.current; // האם האפליקציה עצמה הזיזה את המפה (ולא המשתמש בגרירה/זום)
+    appMove.current = false;
+    onBounds({ south: b.getSouth(), west: b.getWest(), north: b.getNorth(), east: b.getEast() }, byApp);
   };
   useMapEvents({ moveend: emit });
   useEffect(emit, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -45,13 +47,13 @@ function TapToPlace({ active, onPlace }: { active: boolean; onPlace: (p: LatLng)
 }
 
 /** כשגודל המפה משתנה (למשל פאנל הפרטים נפתח לצדה בדסקטופ) מעדכנים את Leaflet. */
-function ResizeWatcher() {
+function ResizeWatcher({ markAppMove }: { markAppMove: () => void }) {
   const map = useMap();
   useEffect(() => {
-    const ro = new ResizeObserver(() => map.invalidateSize());
+    const ro = new ResizeObserver(() => { markAppMove(); map.invalidateSize(); });
     ro.observe(map.getContainer());
     return () => ro.disconnect();
-  }, [map]);
+  }, [map, markAppMove]);
   return null;
 }
 
@@ -61,7 +63,7 @@ export interface Focus { pos: LatLng; n: number }
  * מזיז את המפה כך שנקודה מסוימת תהיה גלויה: פריט שנבחר, תוצאת חיפוש או סמן פרסום חדש.
  * במובייל הגיליון התחתון מכסה את החלק התחתון, ולכן הנקודה מוצבת מעל מרכז המפה.
  */
-function FocusOn({ focus }: { focus: Focus | null }) {
+function FocusOn({ focus, markAppMove }: { focus: Focus | null; markAppMove: () => void }) {
   const map = useMap();
   useEffect(() => {
     if (!focus) return;
@@ -69,20 +71,21 @@ function FocusOn({ focus }: { focus: Focus | null }) {
     const mobile = window.matchMedia("(max-width: 899px)").matches;
     const shift = mobile ? map.getSize().y * 0.2 : 0;
     const target = map.unproject(map.project(focus.pos, zoom).add([0, shift]), zoom);
+    markAppMove();
     map.setView(target, zoom);
   }, [focus?.n]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
 
 /** ממרכז את המפה פעם אחת כשהמיקום הראשון מתקבל, ובכל לחיצה על כפתור המיקום. */
-function Recenter({ me, trigger }: { me: LatLng | null; trigger: number }) {
+function Recenter({ me, trigger, markAppMove }: { me: LatLng | null; trigger: number; markAppMove: () => void }) {
   const map = useMap();
   const first = useRef(true);
   useEffect(() => {
-    if (me && first.current) { first.current = false; map.setView(me, 17); }
-  }, [me, map]);
+    if (me && first.current) { first.current = false; markAppMove(); map.setView(me, 17); }
+  }, [me, map]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (trigger && me) map.setView(me, 17);
+    if (trigger && me) { markAppMove(); map.setView(me, 17); }
   }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 }
@@ -97,7 +100,8 @@ interface Props {
   dragMode: boolean;
   onPickMove: (p: LatLng) => void;
   onSelect: (id: string) => void;
-  onBounds: (b: Bounds) => void;
+  /** byApp = true כשהאפליקציה עצמה הזיזה את המפה (לחיצה על לב, מרכוז, שינוי גודל), ולא המשתמש */
+  onBounds: (b: Bounds, byApp: boolean) => void;
 }
 
 export default function MapView({ items, me, recenter, pick, selectedId, focus, dragMode, onPickMove, onSelect, onBounds }: Props) {
@@ -105,15 +109,24 @@ export default function MapView({ items, me, recenter, pick, selectedId, focus, 
     () => ({ dragend: (e: L.LeafletEvent) => { const l = (e.target as L.Marker).getLatLng(); onPickMove([l.lat, l.lng]); } }),
     [onPickMove]
   );
+  // מסמנים תזוזה שהאפליקציה יזמה, כדי שהאירוע moveend שיבוא אחריה יידע שזו לא גרירה או זום של המשתמש.
+  // (אם בסוף לא הייתה תזוזה, הסימון נמחק לבד אחרי שנייה.)
+  const appMove = useRef(false);
+  const appMoveTimer = useRef<ReturnType<typeof setTimeout>>();
+  const markAppMove = useCallback(() => {
+    appMove.current = true;
+    clearTimeout(appMoveTimer.current);
+    appMoveTimer.current = setTimeout(() => { appMove.current = false; }, 1000);
+  }, []);
   return (
     <MapContainer center={DEFAULT_CENTER} zoom={16} zoomControl={false} className="map">
       <TileLayer url="https://tile.openstreetmap.org/{z}/{x}/{y}.png" maxZoom={19} attribution="© OpenStreetMap" />
-      <Events onBounds={onBounds} />
-      <ResizeWatcher />
+      <Events onBounds={onBounds} appMove={appMove} />
+      <ResizeWatcher markAppMove={markAppMove} />
       <PinScale />
       <TapToPlace active={dragMode && !!pick} onPlace={onPickMove} />
-      <FocusOn focus={focus} />
-      <Recenter me={me} trigger={recenter} />
+      <FocusOn focus={focus} markAppMove={markAppMove} />
+      <Recenter me={me} trigger={recenter} markAppMove={markAppMove} />
       {me && <Marker position={me} icon={meIcon} interactive={false} />}
       {items.map((it) => (
         <Marker key={it.id} position={[it.lat, it.lng]} icon={it.id === selectedId ? pinIconSelected : pinIcon} eventHandlers={{ click: () => onSelect(it.id) }} />
