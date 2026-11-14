@@ -13,3 +13,16 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+  # בודק שכל קובצי המיגרציות עולים נקי, מאפס, על מסד נתונים זמני (בלי לגעת בענן).
+  # supabase start מריץ את כל המיגרציות לפי הסדר ואת seed.sql, ונכשל אם אחת מהן שבורה.
+  migrations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Start a temporary Supabase and apply all migrations
+        run: npx supabase start -x studio,mailpit,imgproxy,vector,edge-runtime,logflare,supavisor,postgres-meta
