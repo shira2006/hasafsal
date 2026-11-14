@@ -14,23 +14,48 @@ export async function fetchItemsInBounds(b: Bounds): Promise<Item[]> {
   return data as Item[];
 }
 
+async function uploadPhoto(blob: Blob): Promise<{ path: string; url: string }> {
+  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+  const up = await supabase.storage.from(BUCKET).upload(path, blob, { contentType: "image/jpeg" });
+  if (up.error) throw up.error;
+  return { path, url: supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl };
+}
+
 /** התמונה אופציונלית, אבל צריך לפחות תמונה או תיאור (נאכף גם במסד הנתונים). */
 export async function createItem(p: { blob: Blob | null; description: string; address: string | null; lat: number; lng: number }) {
-  let path: string | null = null;
-  let photo_url: string | null = null;
-  if (p.blob) {
-    path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-    const up = await supabase.storage.from(BUCKET).upload(path, p.blob, { contentType: "image/jpeg" });
-    if (up.error) throw up.error;
-    photo_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
-  }
+  const photo = p.blob ? await uploadPhoto(p.blob) : null;
   const { error } = await supabase.from("items").insert({
-    lat: p.lat, lng: p.lng, description: p.description || null, address: p.address || null, photo_url, photo_path: path,
+    lat: p.lat, lng: p.lng, description: p.description || null, address: p.address || null,
+    photo_url: photo?.url ?? null, photo_path: photo?.path ?? null,
   });
   if (error) {
-    if (path) supabase.storage.from(BUCKET).remove([path]);
+    if (photo) supabase.storage.from(BUCKET).remove([photo.path]);
     throw error;
   }
+}
+
+/**
+ * מחליף ספסל קיים בספסל חדש באותו מקום (אותה כתובת): תיאור חדש, ותמונה חדשה או הישנה (keepPhoto).
+ * קודם יוצרים את החדש, ורק אחר כך מוחקים את הישן. אם היצירה נכשלת, הישן נשאר כמו שהיה.
+ */
+export async function replaceItem(old: Item, p: { blob: Blob | null; keepPhoto: boolean; description: string }) {
+  const uploaded = p.blob ? await uploadPhoto(p.blob) : null;
+  const reuse = !uploaded && p.keepPhoto && !!old.photo_url;
+  const photo_url = uploaded?.url ?? (reuse ? old.photo_url : null);
+  const photo_path = uploaded?.path ?? (reuse ? old.photo_path : null);
+
+  const { error } = await supabase.from("items").insert({
+    lat: old.lat, lng: old.lng, description: p.description || null, address: old.address, photo_url, photo_path,
+  });
+  if (error) {
+    if (uploaded) supabase.storage.from(BUCKET).remove([uploaded.path]);
+    throw error;
+  }
+
+  // הספסל החדש כבר על המפה. מסירים את הישן (ואת התמונה הישנה, אם היא לא נשארה בשימוש).
+  const del = await supabase.from("items").delete().eq("id", old.id);
+  if (del.error) { console.error(del.error); return; } // נשארה גרסה ישנה: לא מכשילים את הפעולה, החדש כבר פורסם
+  if (old.photo_path && old.photo_path !== photo_path) supabase.storage.from(BUCKET).remove([old.photo_path]);
 }
 
 /** מוחק את הפריט. מחזיר false אם הוא כבר לא היה קיים (מישהו אחר כבר לקח אותו). */

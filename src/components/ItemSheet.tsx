@@ -10,7 +10,8 @@ import PhotoModal from "./PhotoModal";
 interface Props {
   item: Item;
   me: LatLng | null;
-  onTook: (item: Item) => Promise<void>;
+  onTook: (item: Item) => void | Promise<void>; // "לקחתי": שואלים אם נשאר משהו
+  onAdded: (item: Item) => void | Promise<void>; // "הוספתי לספסל": הספסל נשאר ומתעדכן
   onMissing: (item: Item) => Promise<void>; // "זה לא כאן": הפריט כבר לא במקום
   onClose: () => void;
 }
@@ -91,9 +92,9 @@ function SadFace() {
   );
 }
 
-export default function ItemSheet({ item, me, onTook, onMissing, onClose }: Props) {
+export default function ItemSheet({ item, me, onTook, onAdded, onMissing, onClose }: Props) {
   const [busy, setBusy] = useState(false);
-  async function run(action: (item: Item) => Promise<void>) {
+  async function run(action: (item: Item) => void | Promise<void>) {
     setBusy(true);
     try { await action(item); } finally { setBusy(false); }
   }
@@ -137,14 +138,19 @@ export default function ItemSheet({ item, me, onTook, onMissing, onClose }: Prop
         </div>
       </div>
 
-      {/* "לקחתי": הפעולה המרכזית. לצדה "זה לא כאן" (הפריט כבר לא שם). צמודות לתחתית */}
+      {/* שלוש פעולות, צמודות לתחתית: "לקחתי" (הפעולה המרכזית), "הוספתי לספסל" (הספסל נשאר ומתעדכן), "זה לא כאן" (הפריט כבר לא שם) */}
       <div className="actions">
         <button className="btn took green" disabled={busy} onClick={() => run(onTook)}>
           לקחתי ✔
         </button>
-        <button className="btn missing red" disabled={busy} onClick={() => run(onMissing)}>
-          <SadFace /> זה לא כאן
-        </button>
+        <div className="actions-row">
+          <button className="btn added" disabled={busy} onClick={() => run(onAdded)}>
+            הוספתי לספסל
+          </button>
+          <button className="btn missing red" disabled={busy} onClick={() => run(onMissing)}>
+            <SadFace /> זה לא כאן
+          </button>
+        </div>
       </div>
     </div>
   );
