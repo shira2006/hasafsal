@@ -2,13 +2,21 @@ import { useState } from "react";
 import type { Item } from "../types";
 import type { LatLng } from "../hooks";
 import { distanceMeters, formatDistance } from "../lib/geo";
-import noPhoto from "../assets/no-photo.svg";
 
 interface Props {
   item: Item;
   me: LatLng | null;
   onTook: (item: Item) => Promise<void>;
   onClose: () => void;
+}
+
+/** תמונת הפריט. בלי תמונה (או אם היא לא נטענת) מציגים הודעה במקום ציור. */
+function ItemPhoto({ item }: { item: Item }) {
+  const [broken, setBroken] = useState(false);
+  if (!item.photo_url || broken) {
+    return <div className="no-photo">אין תמונה, תצטרכו ללכת לשם כדי לגלות</div>;
+  }
+  return <img src={item.photo_url} alt="תמונת הפריט" onError={() => setBroken(true)} />;
 }
 
 export default function ItemSheet({ item, me, onTook, onClose }: Props) {
@@ -23,26 +31,29 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
         <h2>{item.description || "ללא תיאור"}</h2>
         <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
       </div>
-      <img
-        key={item.id}
-        src={item.photo_url ?? noPhoto}
-        alt={item.photo_url ? "תמונת הפריט" : "ללא תמונה"}
-        onError={(e) => { if (!e.currentTarget.src.endsWith(noPhoto)) e.currentTarget.src = noPhoto; }}
-      />
-      {item.location_note && <p className="note"><span className="label">פירוט על המיקום</span>{item.location_note}</p>}
+
+      <ItemPhoto key={item.id} item={item} />
       <p className="meta">פורסם {when}</p>
 
-      {/* פעולות: ניווט (עם המרחק, כי הוא שייך לניווט), ומתחתיו "לקחתי", הפעולה המרכזית */}
+      {/* אזור ניווט: פירוט על המיקום, המרחק, וכפתור ניווט לשם */}
+      <div className="nav-area">
+        <span className="label">ניווט</span>
+        {item.location_note && <p className="note-text">{item.location_note}</p>}
+        <div className="nav-row">
+          <span className="dist">{distance ? `${distance} ממך` : ""}</span>
+          <a
+            className="btn secondary small"
+            target="_blank"
+            rel="noopener noreferrer"
+            href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
+          >
+            ניווט לשם
+          </a>
+        </div>
+      </div>
+
+      {/* "לקחתי": הפעולה המרכזית, צמודה לתחתית */}
       <div className="actions">
-        <a
-          className="btn secondary nav-btn"
-          target="_blank"
-          rel="noopener noreferrer"
-          href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
-        >
-          <span>ניווט</span>
-          {distance && <span className="dist">{distance} ממך</span>}
-        </a>
         <button
           className="btn took"
           disabled={busy}

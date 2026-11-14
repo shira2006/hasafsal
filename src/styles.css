@@ -14,6 +14,8 @@
   --sage: #bfdcb8;
   --sky: #bee1e6;
   --lilac: #dccfea;
+  --pink-soft: #f4a0b8; /* לבבות על המפה */
+  --pink: #ee7d9c;      /* לב נבחר, ואייקון נבחר: אותו ורוד */
   --ink: #3b4a52;
   --ink-soft: #6b7b82;
   --line: 2px solid var(--ink);
@@ -87,22 +89,26 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 /* גיליון פריט: הפעולות צמודות לתחתית (גם כשצריך לגלול), ו"לקחתי" הוא הכפתור המרכזי */
 .item-sheet { padding-bottom: 0; }
 .item-sheet .actions { position: sticky; bottom: 0; display: flex; flex-direction: column; gap: 10px; padding: 8px 0 calc(16px + env(safe-area-inset-bottom)); background: var(--paper); }
-.btn.nav-btn { flex: none; justify-content: space-between; }
-.nav-btn .dist { font-size: 14px; color: var(--ink-soft); }
 .btn.took { flex: none; padding: 15px 18px; font-size: 19px; }
+/* בלי תמונה: הודעה במקום ציור */
+.no-photo { padding: 22px 16px; text-align: center; background: var(--butter); border-radius: var(--radius); color: var(--ink); font-size: 17px; }
+/* אזור ניווט */
+.nav-area { display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: rgba(191, 220, 184, .35); border-radius: var(--radius); }
+.nav-area .label { font-size: 17px; }
+.nav-area .note-text { margin: 0; }
+.nav-row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.nav-row .dist { font-size: 15px; color: var(--ink-soft); }
 
 /* שדות הטופס */
 .field { display: flex; flex-direction: column; gap: 6px; }
 /* כותרות הסעיפים: קצת יותר בולטות. לגופן יש משקל אחד, ולכן מעבים במעט עם קו מתאר דק */
 .label { font-size: 17px; color: var(--ink); -webkit-text-stroke: .4px currentColor; }
-.sheet .note .label { font-size: 14px; -webkit-text-stroke: 0; color: var(--ink-soft); }
 .req { color: #b4533a; -webkit-text-stroke: 0; }
 .hint { margin: 0; font-size: 13px; color: var(--ink-soft); }
 .hint.err { color: #9b2c2c; }
 .sheet img.preview { aspect-ratio: auto; max-height: 20vh; }
 .add-photo { align-self: flex-start; }
 .nowrap { white-space: nowrap; }
-.sheet .note { display: flex; flex-direction: column; gap: 2px; }
 
 /* שדה המיקום: מציג את המיקום הנבחר, אפשר להקליד בו כתובת. כפתור קטן בתוכו חוזר למיקום הנוכחי. */
 .loc-group { display: flex; flex-direction: column; }
@@ -112,8 +118,13 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .loc-icons { position: absolute; inset-block: 2px; inset-inline-end: 4px; display: flex; align-items: center; gap: 2px; }
 .icon-btn { width: 36px; height: 36px; display: grid; place-items: center; border-radius: 8px; background: none; border: 0; color: var(--ink); cursor: pointer; }
 /* אייקון שנבחר: האייקון עצמו הופך לוורוד (בלי רקע) */
-.icon-btn.on { color: #e0527d; }
+.icon-btn.on { color: var(--pink); }
 .icon-btn.on svg { stroke-width: 2.6; }
+/* בלי מסגרת שחורה סביב הכפתור. למקלדת נשאר סימון עדין. */
+.icon-btn:focus-visible { outline: none; background: rgba(59, 74, 82, .08); }
+/* כפתור הניקוי המובנה של שדה חיפוש (כחול כברירת מחדל): נצבע בצבעי האתר */
+.loc-field input::-webkit-search-cancel-button { -webkit-appearance: none; appearance: none; width: 16px; height: 16px; cursor: pointer;
+  background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%236b7b82' stroke-width='2' stroke-linecap='round'%3E%3Cpath d='M3 3l10 10M13 3L3 13'/%3E%3C/svg%3E") center / contain no-repeat; }
 .icon-btn:disabled { opacity: .35; cursor: default; }
 
 /* במובייל התפריט הצף מוסתר בזמן שגיליון פתוח (הוא היה מוסתר מאחוריו) */
@@ -150,11 +161,11 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .toast { position: fixed; z-index: 2000; top: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-size: 15px; max-width: 90%; box-shadow: var(--shadow); }
 /* סמן פריט: לב ורוד, מסגרת לבנה דקה בלבד וצל עדין. הקצה התחתון מצביע על המיקום.
    הגודל לפי הזום: --pin-scale נקבע ב-MapView. */
-.pin { --pink: #f4a0b8; width: 34px; height: 32px; transform-origin: 50% 100%; transform: scale(var(--pin-scale, 1)); transition: transform .15s; filter: drop-shadow(0 1px 2px rgba(59, 74, 82, .35)); }
+.pin { width: 34px; height: 32px; transform-origin: 50% 100%; transform: scale(var(--pin-scale, 1)); transition: transform .15s; filter: drop-shadow(0 1px 2px rgba(59, 74, 82, .35)); }
 .pin svg { display: block; }
-.pin path { fill: var(--pink); stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
+.pin path { fill: var(--pink-soft); stroke: #fff; stroke-width: 1.6; stroke-linejoin: round; }
 .pin.sel { transform: scale(calc(var(--pin-scale, 1) * 1.3)); }
-.pin.sel path { fill: #ee7d9c; }
+.pin.sel path { fill: var(--pink); }
 .pin.pick { animation: pick-bob 1.2s ease-in-out infinite; }
 @keyframes pick-bob { 50% { transform: scale(calc(var(--pin-scale, 1) * 1.3)) translateY(-3px); } }
 @media (prefers-reduced-motion: reduce) { .pin.pick { animation: none; } }
