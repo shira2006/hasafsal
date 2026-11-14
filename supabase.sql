@@ -30,3 +30,7 @@ on conflict (id) do nothing;
 create policy "photos read"   on storage.objects for select using (bucket_id = 'item-photos');
 create policy "photos insert" on storage.objects for insert with check (bucket_id = 'item-photos');
 create policy "photos delete" on storage.objects for delete using (bucket_id = 'item-photos');
+
+-- הרשאות לטבלה (בפרויקטים חדשים ב-Supabase זה לא ניתן אוטומטית; בלי זה מקבלים 401 / permission denied)
+grant usage on schema public to anon, authenticated;
+grant select, insert, delete on public.items to anon, authenticated;
