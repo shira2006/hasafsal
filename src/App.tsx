@@ -7,7 +7,7 @@ import FloatingMenu from "./components/FloatingMenu";
 import AboutPage from "./components/AboutPage";
 import { useGeolocation, useToast, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
-import { geocode } from "./lib/geocode";
+import { geocode, reverseGeocode } from "./lib/geocode";
 import type { Bounds, Item } from "./types";
 
 const CURRENT_LABEL = "המיקום הנוכחי";
@@ -21,7 +21,8 @@ export default function App() {
   const [bounds, setBounds] = useState<Bounds | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pick, setPick] = useState<LatLng | null>(null);
-  const [pickLabel, setPickLabel] = useState("");
+  const [pickSource, setPickSource] = useState<"current" | "map" | "search">("map"); // איך נבחר המיקום
+  const [pickAddress, setPickAddress] = useState<string | null>(null); // כתובת אמיתית של המיקום הנבחר, אם כבר ידועה
   const [dragging, setDragging] = useState(false); // מצב גרירה: אפשר להזיז את הלב על המפה
   const [focus, setFocus] = useState<Focus | null>(null);
   const [recenter, setRecenter] = useState(0);
@@ -98,17 +99,31 @@ export default function App() {
     const start = me ?? center;
     if (!start) return;
     setPick(start);
-    setPickLabel(me ? CURRENT_LABEL : "מרכז המפה");
+    setPickSource(me ? "current" : "map");
+    setPickAddress(null);
     focusOn(start);
   }
 
-  const onPickMove = useCallback((p: LatLng) => { setPick(p); setPickLabel("מיקום שנבחר במפה"); }, []);
+  const onPickMove = useCallback((p: LatLng) => { setPick(p); setPickSource("map"); setPickAddress(null); }, []);
+
+  // מזהים כתובת אמיתית למיקום הנבחר (נוכחי או מהמפה). ממתינים רגע אחרי כל הזזה, ובקשה אחת בכל פעם.
+  useEffect(() => {
+    if (!pick || pickSource === "search") return;
+    const ac = new AbortController();
+    const t = setTimeout(() => {
+      reverseGeocode(pick[0], pick[1], ac.signal).then((a) => { if (a) setPickAddress(a); }).catch(() => {});
+    }, 500);
+    return () => { clearTimeout(t); ac.abort(); };
+  }, [pick, pickSource]);
+
+  const pickLabel = pickAddress ?? (pickSource === "current" ? CURRENT_LABEL : "מיקום שנבחר במפה");
 
   async function searchAddress(q: string) {
     const r = await geocode(q, boundsRef.current);
     if (!r) return false;
     setPick([r.lat, r.lng]);
-    setPickLabel(r.label);
+    setPickSource("search");
+    setPickAddress(r.label);
     focusOn([r.lat, r.lng]);
     return true;
   }
@@ -116,7 +131,8 @@ export default function App() {
   function backToCurrentLocation() {
     if (!me) return;
     setPick(me);
-    setPickLabel(CURRENT_LABEL);
+    setPickSource("current");
+    setPickAddress(null);
     focusOn(me);
   }
 
@@ -160,7 +176,7 @@ export default function App() {
         {pick && (
           <AddSheet
             locationLabel={pickLabel}
-            isCurrent={pickLabel === CURRENT_LABEL}
+            isCurrent={pickSource === "current"}
             canUseMyLocation={!!me}
             onSubmit={publish}
             onSearch={searchAddress}

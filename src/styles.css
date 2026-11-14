@@ -99,6 +99,8 @@ h1, h2, h3 { font-weight: 400; margin: 0; }
 .loc-row { display: flex; align-items: center; gap: 8px; }
 .loc-field { position: relative; flex: 1; min-width: 0; }
 .loc-field input { width: 100%; padding: 9px 10px; padding-inline-end: 42px; border: var(--line); border-radius: var(--radius); background: #fff; font-size: 16px; }
+.loc-field input.has-lead { padding-inline-start: 36px; }
+.lead { position: absolute; inset-block: 0; inset-inline-start: 10px; display: grid; place-items: center; color: var(--ink-soft); pointer-events: none; }
 .icon-btn { position: absolute; inset-block: 0; inset-inline-end: 4px; width: 34px; display: grid; place-items: center; background: none; border: 0; color: var(--ink); cursor: pointer; }
 
 /* במובייל התפריט הצף מוסתר בזמן שגיליון פתוח (הוא היה מוסתר מאחוריו) */
