@@ -210,6 +210,12 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .page p { font-size: 18px; margin: 0 0 14px; }
 .page .meta { color: var(--ink-soft); font-size: 15px; }
 .page .closing { font-size: 21px; margin-top: 22px; -webkit-text-stroke: .3px currentColor; }
+.share-card { margin-top: 28px; padding: 18px; background: var(--sky); border: var(--line); border-radius: 20px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; align-items: flex-start; gap: 10px; }
+.share-card h2 { font-size: 24px; }
+.share-card p { margin: 0; }
+.share-card .btn { flex: 0 0 auto; background: var(--paper); }
+.dialog-text { margin: 0; font-size: 16px; color: var(--ink-soft); }
+.dialog-actions .btn.added { background: var(--sky); }
 .suggest { margin-top: 28px; padding: 18px; background: var(--butter); border: var(--line); border-radius: 20px; box-shadow: var(--shadow-lg); display: flex; flex-direction: column; gap: 10px; }
 .suggest h2 { font-size: 24px; }
 .suggest p { margin: 0; }

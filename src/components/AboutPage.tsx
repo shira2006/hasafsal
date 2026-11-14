@@ -3,6 +3,8 @@ import { sendSuggestion } from "../lib/suggestions";
 import { friendlyError } from "../lib/errors";
 import { useToasts } from "./Toasts";
 import BenchLoader from "./BenchLoader";
+import ShareIcon from "./ShareIcon";
+import { shareLink } from "../lib/share";
 
 const MAX = 1000;
 
@@ -28,6 +30,15 @@ export default function AboutPage() {
     }
   }
 
+  async function shareSite() {
+    try {
+      const r = await shareLink(`${location.origin}/`, "הספסל: מצאו או השאירו דברים לאחרים, ממש ליד הבית");
+      if (r === "copied") toast.success("הקישור הועתק");
+    } catch {
+      toast.error("לא הצלחנו לשתף. נסו שוב");
+    }
+  }
+
   return (
     <article className="page">
       <div className="page-inner">
@@ -43,6 +54,12 @@ export default function AboutPage() {
         <p className="closing">
           יש אצלכם משהו שעדיין שימושי? פרסמו אותו בספסל, ותנו למי שצריך למצוא אותו.
         </p>
+
+        <section className="share-card">
+          <h2>ספרו לשכנים</h2>
+          <p>ככל שיותר אנשים מכירים את הספסל, יותר דברים טובים מוצאים בית. שלחו את הקישור לחברים, לקבוצה של הבניין או של השכונה.</p>
+          <button type="button" className="btn added" onClick={shareSite}><ShareIcon /> שיתוף הספסל</button>
+        </section>
 
         <form className="suggest" onSubmit={submit}>
           <h2>יש לכם רעיון?</h2>

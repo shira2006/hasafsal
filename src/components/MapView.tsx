@@ -78,11 +78,12 @@ function FocusOn({ focus, markAppMove }: { focus: Focus | null; markAppMove: () 
 }
 
 /** ממרכז את המפה פעם אחת כשהמיקום הראשון מתקבל, ובכל לחיצה על כפתור המיקום. */
-function Recenter({ me, trigger, markAppMove }: { me: LatLng | null; trigger: number; markAppMove: () => void }) {
+function Recenter({ me, trigger, markAppMove, skipFirst }: { me: LatLng | null; trigger: number; markAppMove: () => void; skipFirst: boolean }) {
   const map = useMap();
   const first = useRef(true);
   useEffect(() => {
-    if (me && first.current) { first.current = false; markAppMove(); map.setView(me, 17); }
+    // כשנכנסו מקישור לספסל, המפה כבר ממורכזת עליו: לא מזיזים אותה למיקום שלנו
+    if (me && first.current) { first.current = false; if (!skipFirst) { markAppMove(); map.setView(me, 17); } }
   }, [me, map]); // eslint-disable-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (trigger && me) { markAppMove(); map.setView(me, 17); }
@@ -98,13 +99,15 @@ interface Props {
   selectedId: string | null;
   focus: Focus | null;
   dragMode: boolean;
+  /** נכנסו מקישור לספסל: לא למרכז למיקום הראשון שמתקבל */
+  skipFirstCenter?: boolean;
   onPickMove: (p: LatLng) => void;
   onSelect: (id: string) => void;
   /** byApp = true כשהאפליקציה עצמה הזיזה את המפה (לחיצה על לב, מרכוז, שינוי גודל), ולא המשתמש */
   onBounds: (b: Bounds, byApp: boolean) => void;
 }
 
-export default function MapView({ items, me, recenter, pick, selectedId, focus, dragMode, onPickMove, onSelect, onBounds }: Props) {
+export default function MapView({ items, me, recenter, pick, selectedId, focus, dragMode, skipFirstCenter = false, onPickMove, onSelect, onBounds }: Props) {
   const pickHandlers = useMemo(
     () => ({ dragend: (e: L.LeafletEvent) => { const l = (e.target as L.Marker).getLatLng(); onPickMove([l.lat, l.lng]); } }),
     [onPickMove]
@@ -126,7 +129,7 @@ export default function MapView({ items, me, recenter, pick, selectedId, focus, 
       <PinScale />
       <TapToPlace active={dragMode && !!pick} onPlace={onPickMove} />
       <FocusOn focus={focus} markAppMove={markAppMove} />
-      <Recenter me={me} trigger={recenter} markAppMove={markAppMove} />
+      <Recenter me={me} trigger={recenter} markAppMove={markAppMove} skipFirst={skipFirstCenter} />
       {me && <Marker position={me} icon={meIcon} interactive={false} />}
       {items.map((it) => (
         <Marker key={it.id} position={[it.lat, it.lng]} icon={it.id === selectedId ? pinIconSelected : pinIcon} eventHandlers={{ click: () => onSelect(it.id) }} />
