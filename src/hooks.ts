@@ -24,6 +24,17 @@ export function useGeolocation(onError: () => void) {
   return { pos, accuracy };
 }
 
+/** true רק אם הדגל נשאר דלוק יותר מ-ms. כדי שמציין טעינה לא יבהב בטעינות מהירות. */
+export function useDelayedFlag(flag: boolean, ms = 400) {
+  const [shown, setShown] = useState(false);
+  useEffect(() => {
+    if (!flag) { setShown(false); return; }
+    const t = setTimeout(() => setShown(true), ms);
+    return () => clearTimeout(t);
+  }, [flag, ms]);
+  return shown;
+}
+
 export type View = "map" | "about";
 
 /** ניווט פשוט לפי hash (#/about), כך שכפתור "אחורה" עובד ואין צורך בהגדרות שרת. */

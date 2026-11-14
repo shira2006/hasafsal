@@ -2,6 +2,7 @@ import { useState } from "react";
 import { sendSuggestion } from "../lib/suggestions";
 import { friendlyError } from "../lib/errors";
 import { useToasts } from "./Toasts";
+import BenchLoader from "./BenchLoader";
 
 const MAX = 1000;
 
@@ -60,7 +61,7 @@ export default function AboutPage() {
             aria-label="ההצעה שלכם"
           />
           <div className="suggest-row">
-            <button className="btn" type="submit" disabled={!valid || busy}>{busy ? "שולחים..." : "שליחה"}</button>
+            <button className="btn" type="submit" disabled={!valid || busy}>{busy ? <><BenchLoader size={18} label="שולחים" /> שולחים...</> : "שליחה"}</button>
           </div>
         </form>
 

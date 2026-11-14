@@ -7,7 +7,9 @@ import FloatingMenu from "./components/FloatingMenu";
 import AboutPage from "./components/AboutPage";
 import { useToasts } from "./components/Toasts";
 import { friendlyError } from "./lib/errors";
-import { useGeolocation, useView, type LatLng } from "./hooks";
+import BenchLoader from "./components/BenchLoader";
+import ErrorCard from "./components/ErrorCard";
+import { useDelayedFlag, useGeolocation, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
 import { distanceMeters } from "./lib/geo";
@@ -31,6 +33,10 @@ export default function App() {
   const [focus, setFocus] = useState<Focus | null>(null);
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [loadingItems, setLoadingItems] = useState(false);
+  const [loadError, setLoadError] = useState(false); // לא הצלחנו לטעון את הספסלים
+  const [lookingUp, setLookingUp] = useState(false); // מחפשים כתובת למיקום הנבחר
+  const showLoading = useDelayedFlag(loadingItems, 400);
   const boundsRef = useRef<Bounds | null>(null);
   boundsRef.current = bounds;
   const selectedIdRef = useRef<string | null>(null);
@@ -41,14 +47,24 @@ export default function App() {
   // הייתה ברקע נעלמים, ופריטים רחוקים לא נשארים בזיכרון.
   useEffect(() => {
     if (!bounds) return;
+    let cancelled = false; // תשובה ישנה לא דורסת תשובה חדשה יותר
     const t = setTimeout(async () => {
+      setLoadingItems(true);
       try {
         const list = await fetchItemsInBounds(bounds);
+        if (cancelled) return;
         setItems(new Map(list.map((i) => [i.id, i])));
-      } catch (e) { toast.error(friendlyError(e, "לא הצלחנו לטעון את הספסלים")); }
+        setLoadError(false);
+        setLoadingItems(false);
+      } catch (e) {
+        if (cancelled) return;
+        console.error(e);
+        setLoadError(true);
+        setLoadingItems(false);
+      }
     }, 300);
-    return () => clearTimeout(t);
-  }, [bounds, refreshKey, toast]);
+    return () => { cancelled = true; clearTimeout(t); };
+  }, [bounds, refreshKey]);
 
   // מתריעים כשהחיבור נופל, ובחזרתו טוענים מחדש
   useEffect(() => {
@@ -98,7 +114,7 @@ export default function App() {
     try {
       const removed = await removeItem(item);
       setSelectedId(null);
-      if (removed) toast.success("תתחדשו! אנחנו כבר נעדכן את המפה");
+      if (removed) toast.success("תתחדש/י!");
       else toast.info("ממש מצטערים, כנראה שזה נפל לנו בין הכסאות");
     } catch (e) {
       tookByMe.current.delete(item.id);
@@ -114,7 +130,7 @@ export default function App() {
       // שומרים את הכתובת רק אם כבר זוהתה (לא את הטקסט הכללי "המיקום הנוכחי")
       await createItem({ ...p, address: pickAddress, lat: pick[0], lng: pick[1] });
       closeAdd();
-      toast.success("מלכ/ה! אנחנו כבר נדאג שזה ימצא בית אוהב");
+      toast.success("מלכ/ה כבר נדאג למצוא לפריט בית חדש");
     } catch (e) { toast.error(friendlyError(e, "לא הצלחנו לפרסם את הפריט. נסו שוב")); }
   }
 
@@ -136,15 +152,20 @@ export default function App() {
 
   // מזהים כתובת אמיתית למיקום הנבחר (נוכחי או מהמפה). ממתינים רגע אחרי כל הזזה, ובקשה אחת בכל פעם.
   useEffect(() => {
-    if (!pick || pickSource === "search") return;
+    if (!pick || pickSource === "search") { setLookingUp(false); return; }
     const ac = new AbortController();
     let retry: ReturnType<typeof setTimeout> | undefined;
+    setLookingUp(true);
     // כשהמיקום נלקח מה-GPS והדיוק נמוך, מציגים רחוב ועיר בלי מספר בית (המספר יכול להיות של בניין אחר)
     const approximate = pickSource === "current" && (meAccuracyRef.current ?? 0) > 30;
     const lookup = (again: boolean) =>
       reverseGeocode(pick[0], pick[1], ac.signal, { approximate })
-        .then((a) => { if (a) setPickAddress(a); })
-        .catch(() => { if (again && !ac.signal.aborted) retry = setTimeout(() => lookup(false), 2000); }); // ניסיון חוזר אחד
+        .then((a) => { if (a) setPickAddress(a); setLookingUp(false); })
+        .catch(() => {
+          if (ac.signal.aborted) return;
+          if (again) retry = setTimeout(() => lookup(false), 2000); // ניסיון חוזר אחד
+          else setLookingUp(false);
+        });
     const t = setTimeout(() => lookup(true), 500);
     return () => { clearTimeout(t); clearTimeout(retry); ac.abort(); };
   }, [pick, pickSource]);
@@ -203,6 +224,17 @@ export default function App() {
             onAdd={startAdd}
             onRecenter={() => (me ? setRecenter((n) => n + 1) : toast.info("מחפשים מיקום..."))}
           />
+          {/* טעינת ספסלים: מציין קטן (רק אם הטעינה מתארכת), ואם נכשלה: כרטיס שגיאה עם ניסיון חוזר */}
+          {showLoading && !loadError && (
+            <div className="map-status"><BenchLoader size={26} label="טוענים ספסלים..." showLabel /></div>
+          )}
+          {loadError && (
+            <ErrorCard
+              title="לא הצלחנו לטעון את הספסלים"
+              text="בדקו את החיבור ונסו שוב"
+              onRetry={() => { setLoadError(false); setRefreshKey((k) => k + 1); }}
+            />
+          )}
           {dragging && (
             <div className="drag-bar" role="status">
               <span>גוררים את הלב, או מקישים על המפה, למקום המדויק</span>
@@ -215,6 +247,7 @@ export default function App() {
           <AddSheet
             debugInfo={`pin ${pick[0].toFixed(5)}, ${pick[1].toFixed(5)} | gps ${me ? `${me[0].toFixed(5)}, ${me[1].toFixed(5)}` : "none"} ±${Math.round(meAccuracy ?? 0)}m | source: ${pickSource}`}
             locationLabel={pickLabel}
+            resolving={lookingUp && pickAddress === null}
             isCurrent={pickSource === "current"}
             isMapPick={pickSource === "map"}
             canUseMyLocation={!!me}

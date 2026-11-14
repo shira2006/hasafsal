@@ -4,6 +4,8 @@ import type { LatLng } from "../hooks";
 import { distanceMeters, formatDistance } from "../lib/geo";
 import { reverseGeocode } from "../lib/geocode";
 import bench from "../assets/bench-generic.svg";
+import BenchLoader from "./BenchLoader";
+import PhotoModal from "./PhotoModal";
 
 interface Props {
   item: Item;
@@ -12,9 +14,11 @@ interface Props {
   onClose: () => void;
 }
 
-/** תמונת הפריט. בלי תמונה (או אם היא לא נטענת): ציור הספסל שלנו, ומתחתיו הודעה. */
+/** תמונת הפריט. הקשה עליה פותחת אותה בגדול. בלי תמונה (או אם היא לא נטענת): ציור הספסל שלנו והודעה. */
 function ItemPhoto({ item }: { item: Item }) {
   const [broken, setBroken] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+  const [open, setOpen] = useState(false);
   if (!item.photo_url || broken) {
     return (
       <div className="no-photo">
@@ -23,7 +27,15 @@ function ItemPhoto({ item }: { item: Item }) {
       </div>
     );
   }
-  return <img className="photo" src={item.photo_url} alt="תמונת הפריט" onError={() => setBroken(true)} />;
+  return (
+    <>
+      <button type="button" className={`photo-wrap${loaded ? " loaded" : ""}`} onClick={() => setOpen(true)} aria-label="הגדלת התמונה" disabled={!loaded}>
+        {!loaded && <BenchLoader size={36} label="טוענים תמונה" />}
+        <img className="photo" src={item.photo_url} alt="תמונת הפריט" onLoad={() => setLoaded(true)} onError={() => setBroken(true)} />
+      </button>
+      {open && <PhotoModal src={item.photo_url} alt="תמונת הפריט" onClose={() => setOpen(false)} />}
+    </>
+  );
 }
 
 /** תיאור: מקוצר לכמה שורות עם "קראו עוד", כדי שהגיליון לא יצטרך לגלול. */
@@ -62,12 +74,13 @@ function useAddress(item: Item) {
       .catch(() => {});
     return () => ac.abort();
   }, [item.id, item.address, item.lat, item.lng]);
-  return item.address ?? found ?? null;
+  const address = item.address ?? found ?? null;
+  return { address, loading: !address && found === undefined };
 }
 
 export default function ItemSheet({ item, me, onTook, onClose }: Props) {
   const [busy, setBusy] = useState(false);
-  const address = useAddress(item);
+  const { address, loading: addressLoading } = useAddress(item);
   const distance = me ? formatDistance(distanceMeters(me, [item.lat, item.lng])) : null;
   const when = new Date(item.created_at).toLocaleString("he-IL", { dateStyle: "short", timeStyle: "short" });
   // בפריטים ישנים שנשמרה בהם הערת מיקום נפרדת, היא מוצגת כהמשך התיאור
@@ -75,9 +88,12 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
 
   return (
     <div className="sheet item-sheet">
-      {/* שורה עליונה: מתי פורסם (בצד ימין), וסגירה (בצד שמאל). ה-X מחוץ לתמונה, כדי שלא ייראה כמחיקה שלה */}
+      {/* שורה עליונה: בצד ימין התקציר (מתי פורסם, וכמה זה רחוק ממני), ובצד שמאל סגירה. ה-X מחוץ לתמונה, כדי שלא ייראה כמחיקה שלה */}
       <div className="sheet-head">
-        <span className="posted">פורסם {when}</span>
+        <div className="summary">
+          <span className="posted">פורסם {when}</span>
+          {distance && <span className="posted">{distance} ממך</span>}
+        </div>
         <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
       </div>
 
@@ -88,21 +104,19 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
         <div className="card"><Description key={item.id} text={text} /></div>
       </div>
 
+      {/* מיקום: הכתובת וכפתור הניווט באותה שורה */}
       <div className="field">
         <span className="label">מיקום</span>
         <div className="card loc-card">
-          <p className="address">{address ?? " "}</p>
-          <div className="nav-row">
-            <span className="dist">{distance ? `${distance} ממך` : ""}</span>
-            <a
-              className="btn secondary small"
-              target="_blank"
-              rel="noopener noreferrer"
-              href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
-            >
-              ניווט לשם
-            </a>
-          </div>
+          <p className="address">{address ?? (addressLoading ? <BenchLoader size={22} label="מחפשים כתובת" /> : "הכתובת לא זמינה")}</p>
+          <a
+            className="btn secondary small"
+            target="_blank"
+            rel="noopener noreferrer"
+            href={`https://www.google.com/maps/dir/?api=1&destination=${item.lat},${item.lng}&travelmode=walking`}
+          >
+            ניווט לשם
+          </a>
         </div>
       </div>
 

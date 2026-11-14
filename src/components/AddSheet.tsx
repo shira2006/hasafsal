@@ -1,10 +1,12 @@
 import { useEffect, useState } from "react";
 import { shrinkImage } from "../lib/image";
 import { friendlyError } from "../lib/errors";
+import BenchLoader from "./BenchLoader";
 
 interface Props {
   debugInfo?: string; // לפיתוח בלבד: קואורדינטות, דיוק ומקור המיקום
   locationLabel: string;
+  resolving: boolean; // מחפשים כתובת למיקום הנבחר
   isCurrent: boolean;
   isMapPick: boolean; // המיקום נבחר על המפה (גרירה או הקשה)
   canUseMyLocation: boolean;
@@ -16,7 +18,7 @@ interface Props {
   onError: (msg: string) => void;
 }
 
-export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPick, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
+export default function AddSheet({ debugInfo, locationLabel, resolving, isCurrent, isMapPick, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
@@ -74,7 +76,9 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
       <div className="sheet-head">
         <h2>מצאת ספסל?</h2>
         <div className="head-actions">
-          <button className="btn small" disabled={!canPublish} onClick={publish}>{busy ? "מעלים..." : "פרסום"}</button>
+          <button className="btn small" disabled={!canPublish} onClick={publish}>
+            {busy ? <><BenchLoader size={16} label="מעלים" /> מעלים...</> : "פרסום"}
+          </button>
           <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
         </div>
       </div>
@@ -128,6 +132,7 @@ export default function AddSheet({ debugInfo, locationLabel, isCurrent, isMapPic
             onFocus={(e) => e.currentTarget.select()}
             onBlur={() => { if (!searching) setLocText(locationLabel); }}
           />
+          {(resolving || searching) && <span className="resolving"><BenchLoader size={20} label="מחפשים כתובת" /></span>}
           <div className="loc-icons">
             <button type="button" className={`icon-btn${isCurrent ? " on" : ""}`} disabled={!canUseMyLocation} onClick={onUseMyLocation} aria-label="מיקום נוכחי" title="מיקום נוכחי">
               <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
