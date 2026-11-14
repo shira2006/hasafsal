@@ -5,6 +5,7 @@
 ## מבנה
 - **Frontend:** React 18 + TypeScript + Vite, מפה עם Leaflet / react-leaflet (OpenStreetMap)
 - **Backend:** Supabase (Postgres, Storage לתמונות, Realtime)
+- **CI/CD:** פריסה (CD) רק מ-`main`. בדיקת בנייה (CI) רצה רק על PR ל-`main`. ל-`dev` אין פריסה ואין workflow
 - **סכמה:** `supabase/migrations/` (הסכמה כקוד), נתוני דמו ב-`supabase/seed.sql`
 - **פריסה:** GitHub Pages דרך GitHub Actions, רק מענף `main`
 
