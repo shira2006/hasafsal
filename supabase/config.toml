@@ -1,0 +1,25 @@
+# הגדרות Supabase מקומי. לפרטים: https://supabase.com/docs/guides/local-development/cli/config
+project_id = "hasafsal"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public"]
+
+[db]
+port = 54322
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]
+
+[realtime]
+enabled = true
+
+[storage]
+enabled = true
+file_size_limit = "10MiB"
+
+[studio]
+enabled = true
+port = 54323
