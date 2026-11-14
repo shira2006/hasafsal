@@ -197,7 +197,6 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
   .bench-loader path.heart { animation: none; opacity: 1; }
 }
 /* טעינת פריטים: תג קטן בראש המפה */
-.map-status { position: absolute; z-index: 650; top: 12px; left: 50%; transform: translateX(-50%); width: max-content; max-width: 92%; white-space: nowrap; display: flex; align-items: center; padding: 6px 14px; background: #fff; border: var(--line); border-radius: var(--radius); box-shadow: var(--float); }
 .loc-field .resolving { position: absolute; inset-block: 0; inset-inline-end: 84px; display: grid; place-items: center; pointer-events: none; }
 .btn .bench-loader { color: inherit; }
 /* תמונה בטעינה: משטח רך עם מציין טעינה, והתמונה מופיעה בהדרגה */
