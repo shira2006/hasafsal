@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import MapView from "./components/MapView";
+import MapView, { type Focus } from "./components/MapView";
 import ItemSheet from "./components/ItemSheet";
 import AddSheet from "./components/AddSheet";
 import Navbar from "./components/Navbar";
@@ -7,6 +7,7 @@ import FloatingMenu from "./components/FloatingMenu";
 import AboutPage from "./components/AboutPage";
 import { useGeolocation, useToast, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
+import { geocode } from "./lib/geocode";
 import type { Bounds, Item } from "./types";
 
 const errText = (e: unknown) => (e instanceof Error ? e.message : (e as { message?: string })?.message ?? String(e));
@@ -19,6 +20,8 @@ export default function App() {
   const [bounds, setBounds] = useState<Bounds | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pick, setPick] = useState<LatLng | null>(null);
+  const [pickLabel, setPickLabel] = useState("");
+  const [focus, setFocus] = useState<Focus | null>(null);
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const boundsRef = useRef<Bounds | null>(null);
@@ -73,7 +76,7 @@ export default function App() {
     catch (e) { setToast("שגיאה בהסרה: " + errText(e)); }
   }
 
-  async function publish(p: { blob: Blob; description: string }) {
+  async function publish(p: { blob: Blob | null; description: string }) {
     if (!pick) return;
     try {
       await createItem({ ...p, lat: pick[0], lng: pick[1] });
@@ -82,9 +85,35 @@ export default function App() {
     } catch (e) { setToast("שגיאה בפרסום: " + errText(e)); }
   }
 
+  const focusOn = (pos: LatLng) => setFocus((f) => ({ pos, n: (f?.n ?? 0) + 1 }));
+
+  // ברירת המחדל: המיקום הנוכחי. אפשר לשנות בגרירת הסמן או בחיפוש כתובת.
   function startAdd() {
     setSelectedId(null);
-    setPick(me ?? (bounds ? [(bounds.south + bounds.north) / 2, (bounds.west + bounds.east) / 2] : null));
+    const center: LatLng | null = bounds ? [(bounds.south + bounds.north) / 2, (bounds.west + bounds.east) / 2] : null;
+    const start = me ?? center;
+    if (!start) return;
+    setPick(start);
+    setPickLabel(me ? "המיקום הנוכחי שלי" : "מרכז המפה");
+    focusOn(start);
+  }
+
+  const onPickMove = useCallback((p: LatLng) => { setPick(p); setPickLabel("מיקום שנבחר במפה"); }, []);
+
+  async function searchAddress(q: string) {
+    const r = await geocode(q, boundsRef.current);
+    if (!r) return false;
+    setPick([r.lat, r.lng]);
+    setPickLabel(r.label);
+    focusOn([r.lat, r.lng]);
+    return true;
+  }
+
+  function useMyLocation() {
+    if (!me) return;
+    setPick(me);
+    setPickLabel("המיקום הנוכחי שלי");
+    focusOn(me);
   }
 
   return (
@@ -100,8 +129,14 @@ export default function App() {
             recenter={recenter}
             pick={pick}
             selectedId={selectedId}
-            onPickMove={setPick}
-            onSelect={(id) => { setPick(null); setSelectedId(id); }}
+            focus={focus}
+            onPickMove={onPickMove}
+            onSelect={(id) => {
+              setPick(null);
+              setSelectedId(id);
+              const it = items.get(id);
+              if (it) focusOn([it.lat, it.lng]);
+            }}
             onBounds={onBounds}
           />
           <FloatingMenu
@@ -111,7 +146,17 @@ export default function App() {
           />
         </div>
         {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
-        {pick && <AddSheet onSubmit={publish} onClose={() => setPick(null)} onError={setToast} />}
+        {pick && (
+          <AddSheet
+            locationLabel={pickLabel}
+            canUseMyLocation={!!me}
+            onSubmit={publish}
+            onSearch={searchAddress}
+            onUseMyLocation={useMyLocation}
+            onClose={() => setPick(null)}
+            onError={setToast}
+          />
+        )}
       </div>
       {toast && <div className="toast">{toast}</div>}
     </div>

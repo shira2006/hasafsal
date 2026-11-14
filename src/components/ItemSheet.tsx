@@ -2,6 +2,7 @@ import { useState } from "react";
 import type { Item } from "../types";
 import type { LatLng } from "../hooks";
 import { distanceMeters, formatDistance } from "../lib/geo";
+import noPhoto from "../assets/no-photo.svg";
 
 interface Props {
   item: Item;
@@ -18,7 +19,12 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
   return (
     <div className="sheet">
       <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
-      <img src={item.photo_url} alt="תמונת הפריט" />
+      <img
+        key={item.id}
+        src={item.photo_url ?? noPhoto}
+        alt={item.photo_url ? "תמונת הפריט" : "ללא תמונה"}
+        onError={(e) => { if (!e.currentTarget.src.endsWith(noPhoto)) e.currentTarget.src = noPhoto; }}
+      />
       <h2>{item.description || "ללא תיאור"}</h2>
       <p className="meta">פורסם {when}{d}</p>
       <div className="row">

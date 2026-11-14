@@ -14,16 +14,21 @@ export async function fetchItemsInBounds(b: Bounds): Promise<Item[]> {
   return data as Item[];
 }
 
-export async function createItem(p: { blob: Blob; description: string; lat: number; lng: number }) {
-  const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
-  const up = await supabase.storage.from(BUCKET).upload(path, p.blob, { contentType: "image/jpeg" });
-  if (up.error) throw up.error;
-  const photo_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+/** התמונה אופציונלית, אבל צריך לפחות תמונה או תיאור (נאכף גם במסד הנתונים). */
+export async function createItem(p: { blob: Blob | null; description: string; lat: number; lng: number }) {
+  let path: string | null = null;
+  let photo_url: string | null = null;
+  if (p.blob) {
+    path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const up = await supabase.storage.from(BUCKET).upload(path, p.blob, { contentType: "image/jpeg" });
+    if (up.error) throw up.error;
+    photo_url = supabase.storage.from(BUCKET).getPublicUrl(path).data.publicUrl;
+  }
   const { error } = await supabase.from("items").insert({
     lat: p.lat, lng: p.lng, description: p.description || null, photo_url, photo_path: path,
   });
   if (error) {
-    supabase.storage.from(BUCKET).remove([path]);
+    if (path) supabase.storage.from(BUCKET).remove([path]);
     throw error;
   }
 }

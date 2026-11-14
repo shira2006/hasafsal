@@ -3,7 +3,7 @@ export interface Item {
   lat: number;
   lng: number;
   description: string | null;
-  photo_url: string;
+  photo_url: string | null;
   photo_path: string | null;
   created_at: string;
 }
