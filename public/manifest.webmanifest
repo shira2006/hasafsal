@@ -4,6 +4,7 @@
   "description": "מצאו ופרסמו חפצים להשאיר ברחוב לכל מי שצריך",
   "lang": "he",
   "dir": "rtl",
+  "id": "/",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",

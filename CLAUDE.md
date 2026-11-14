@@ -34,6 +34,7 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - dev = local only (Supabase CLI + Docker). Production = GitHub Pages (GitHub Actions) + one cloud Supabase project.
 - Env values go in `.env.local` (gitignored). `.env.example` is only a template: never put real values in it. `.env.production` holds the public publishable key. Never put secret/service_role keys in the repo.
 - Local analytics (Logflare) is disabled in `config.toml` (fails its health check on Windows).
+- Production URL: https://www.hasafsal.net (GitHub Pages custom domain, base "/"). Dev server: http://localhost:5173/ .
 - Dev-only helpers (not in production builds): `?mockLoc=lat,lng[,accuracyMeters]` fakes the GPS position; a small `dev:` line under the location field shows pin/GPS coordinates.
 
 ## Commands
@@ -71,5 +72,5 @@ About 200 concurrent Realtime connections, 1 GB storage. Public OpenStreetMap ti
 2. Spam/abuse protection and a way to report an item.
 3. Error monitoring (Sentry) and privacy-friendly analytics.
 4. Before public launch: a proper map-tile provider and geocoder (MapTiler/Mapbox) with live address suggestions in Hebrew.
-5. Custom domain: change `base` in `vite.config.ts` and `start_url`/`scope` in `public/manifest.webmanifest` (done: the site is served from the root of hasafsal.net).
+5. Custom domain: change `base` in `vite.config.ts` and `start_url`/`scope` in `public/manifest.webmanifest` (done: the site is served from the root of https://www.hasafsal.net; apex hasafsal.net and the old github.io address redirect there; see README "דומיין").
 6. Generate DB types with `supabase gen types typescript` instead of hand-written `src/types.ts`.

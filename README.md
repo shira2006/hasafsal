@@ -65,5 +65,14 @@ npm run db:push         # מעדכן את ה-production
   - `SUPABASE_PROJECT_ID`: `yhegdjejmrxhgdginerq`
 - מומלץ: Settings -> Branches -> להגן על `main` ו-`dev` (PR נדרש, בדיקות CI חייבות לעבור)
 
+## דומיין
+האתר מוגש מהשורש של הדומיין (`base: "/"` ב-`vite.config.ts`, ו-`start_url`/`scope` של `/` ב-`public/manifest.webmanifest`).
+- הכתובת הראשית: **https://www.hasafsal.net**. הדומיין בלי `www` (`hasafsal.net`) וגם הכתובת הישנה `shira2006.github.io/hasafsal` מופנים אליה אוטומטית על ידי GitHub Pages.
+- ב-GitHub: Settings -> Pages -> Custom domain: `www.hasafsal.net`, ולסמן **Enforce HTTPS**.
+- ב-DNS: רשומות `A` של הדומיין הראשי לכתובות של GitHub Pages (185.199.108.153, 185.199.109.153, 185.199.110.153, 185.199.111.153), ורשומת `CNAME` של `www` ל-`shira2006.github.io`.
+- פריסה מ-GitHub Actions לא צריכה קובץ `CNAME` בפרויקט: הדומיין נשמר בהגדרות ה-Pages.
+- אפליקציה שהותקנה (PWA) מהכתובת הישנה לא תתעדכן: צריך להסיר ולהתקין מחדש מהדומיין החדש.
+- ב-Supabase אין כרגע התחברות, ולכן אין כתובות החזרה (redirect URLs) להגדיר. כשנוסיף התחברות עם Google, צריך להוסיף שם את `https://www.hasafsal.net`.
+
 ## הצעד הבא
 התחברות עם Google (`src/lib/auth.ts`) והחלפת מדיניות ה-RLS לתנאים עם `auth.uid()`.
