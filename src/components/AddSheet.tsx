@@ -101,7 +101,7 @@ export default function AddSheet({ debugInfo, locationLabel, resolving, isCurren
           id="desc"
           rows={3}
           maxLength={500}
-          placeholder="תארו את הפריטים. ואם יש מה לספר על המיקום, כתבו איפה בדיוק, כדי לעזור לאחרים למצוא"
+          placeholder="תארו את הפריטים, ואיפה בדיוק למצוא אותם"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
         />
