@@ -58,6 +58,18 @@ function ResizeWatcher({ markAppMove }: { markAppMove: () => void }) {
 }
 
 export interface Focus { pos: LatLng; n: number }
+/** מתאים את הזום כך שכל הנקודות נראות (אני והספסל הקרוב) */
+export interface Fit { points: LatLng[]; n: number }
+
+function FitTo({ fit, markAppMove }: { fit: Fit | null; markAppMove: () => void }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!fit) return;
+    markAppMove();
+    map.fitBounds(L.latLngBounds(fit.points), { padding: [70, 70], maxZoom: 17 });
+  }, [fit?.n]); // eslint-disable-line react-hooks/exhaustive-deps
+  return null;
+}
 
 /**
  * מזיז את המפה כך שנקודה מסוימת תהיה גלויה: פריט שנבחר, תוצאת חיפוש או סמן פרסום חדש.
@@ -98,6 +110,7 @@ interface Props {
   pick: LatLng | null;
   selectedId: string | null;
   focus: Focus | null;
+  fit?: Fit | null;
   dragMode: boolean;
   /** נכנסו מקישור לספסל: לא למרכז למיקום הראשון שמתקבל */
   skipFirstCenter?: boolean;
@@ -107,7 +120,7 @@ interface Props {
   onBounds: (b: Bounds, byApp: boolean) => void;
 }
 
-export default function MapView({ items, me, recenter, pick, selectedId, focus, dragMode, skipFirstCenter = false, onPickMove, onSelect, onBounds }: Props) {
+export default function MapView({ items, me, recenter, pick, selectedId, focus, fit = null, dragMode, skipFirstCenter = false, onPickMove, onSelect, onBounds }: Props) {
   const pickHandlers = useMemo(
     () => ({ dragend: (e: L.LeafletEvent) => { const l = (e.target as L.Marker).getLatLng(); onPickMove([l.lat, l.lng]); } }),
     [onPickMove]
@@ -129,6 +142,7 @@ export default function MapView({ items, me, recenter, pick, selectedId, focus, 
       <PinScale />
       <TapToPlace active={dragMode && !!pick} onPlace={onPickMove} />
       <FocusOn focus={focus} markAppMove={markAppMove} />
+      <FitTo fit={fit} markAppMove={markAppMove} />
       <Recenter me={me} trigger={recenter} markAppMove={markAppMove} skipFirst={skipFirstCenter} />
       {me && <Marker position={me} icon={meIcon} interactive={false} />}
       {items.map((it) => (

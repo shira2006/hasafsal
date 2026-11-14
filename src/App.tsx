@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import MapView, { type Focus } from "./components/MapView";
+import MapView, { type Fit, type Focus } from "./components/MapView";
 import ItemSheet from "./components/ItemSheet";
 import AddSheet from "./components/AddSheet";
 import Navbar from "./components/Navbar";
@@ -13,9 +13,9 @@ import UpdateSheet from "./components/UpdateSheet";
 import LeftoverDialog from "./components/LeftoverDialog";
 import ShareDialog from "./components/ShareDialog";
 import { itemIdFromHash } from "./lib/share";
-import { createItem, fetchItemById, fetchItemsInBounds, removeItem, replaceItem, subscribeItems } from "./lib/items";
+import { createItem, fetchItemById, fetchItemsInBounds, fetchNearestItem, removeItem, replaceItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
-import { distanceMeters } from "./lib/geo";
+import { distanceMeters, formatDistance } from "./lib/geo";
 import type { Bounds, Item } from "./types";
 
 const CURRENT_LABEL = "המיקום הנוכחי";
@@ -38,6 +38,7 @@ export default function App() {
   const [share, setShare] = useState<{ id: string; message: string } | null>(null); // אחרי פרסום/עדכון: הצעה לשתף את הספסל
   const [openedViaLink] = useState(() => itemIdFromHash() !== null); // נכנסו מקישור לספסל: לא מזיזים את המפה למיקום שלנו
   const [focus, setFocus] = useState<Focus | null>(null);
+  const [fit, setFit] = useState<Fit | null>(null);
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false);
@@ -173,6 +174,36 @@ export default function App() {
 
   const focusOn = (pos: LatLng) => setFocus((f) => ({ pos, n: (f?.n ?? 0) + 1 }));
 
+  // לב: עוברים לספסל הקרוב ביותר אליי ופותחים אותו
+  async function goNearest() {
+    if (!me) { toast.info("אין גישה למיקום. אשרו מיקום בדפדפן"); return; }
+    try {
+      const r = await fetchNearestItem(me[0], me[1]);
+      if (!r) { toast.info("עוד לא פורסמו ספסלים באזור. אפשר להיות הראשונים!"); return; }
+      setItems((p) => new Map(p).set(r.item.id, r.item));
+      closeAdd();
+      setUpdating(null);
+      setAskLeftover(null);
+      setSelectedId(r.item.id);
+      focusOn([r.item.lat, r.item.lng]);
+    } catch (e) {
+      toast.error(friendlyError(e, "לא הצלחנו למצוא את הספסל הקרוב"));
+    }
+  }
+
+  // בפתיחה: אם הספסל הקרוב רחוק ממה שנראה במפה, מתאימים את הזום כך שרואים גם אותי וגם אותו
+  const checkedNearest = useRef(false);
+  useEffect(() => {
+    if (!me || openedViaLink || checkedNearest.current) return;
+    checkedNearest.current = true;
+    fetchNearestItem(me[0], me[1]).then((r) => {
+      if (!r || r.meters <= 250) return;
+      setItems((p) => new Map(p).set(r.item.id, r.item));
+      setFit((f) => ({ points: [me, [r.item.lat, r.item.lng]], n: (f?.n ?? 0) + 1 }));
+      toast.info(`הספסל הקרוב ביותר נמצא במרחק ${formatDistance(r.meters)}`);
+    }).catch(() => { /* חיפוש רקע: אם נכשל, נשארים על המיקום שלי */ });
+  }, [me, openedViaLink, toast]);
+
   // קישור שיתוף (#/b/<id>): פותחים את הספסל ומרכזים עליו את המפה
   useEffect(() => {
     const open = async () => {
@@ -272,6 +303,7 @@ export default function App() {
             pick={pick}
             selectedId={selectedId}
             focus={focus}
+            fit={fit}
             dragMode={dragging}
             skipFirstCenter={openedViaLink}
             onPickMove={onPickMove}
@@ -288,6 +320,7 @@ export default function App() {
           <FloatingMenu
             showAdd={!pick}
             onAdd={startAdd}
+            onNearest={goNearest}
             onRecenter={() => (me ? setRecenter((n) => n + 1) : toast.info("מחפשים מיקום..."))}
           />
           {/* טעינת ספסלים: מציין קטן בראש המפה, רק אם הטעינה מתארכת. הציור שלו משלים את עצמו עד הסוף. */}
