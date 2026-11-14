@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import ItemSheet from "./components/ItemSheet";
 import AddSheet from "./components/AddSheet";
+import Navbar from "./components/Navbar";
+import FloatingMenu from "./components/FloatingMenu";
 import { useGeolocation, useToast, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import type { Bounds, Item } from "./types";
@@ -85,20 +87,28 @@ export default function App() {
 
   return (
     <div className="app">
-      <header><h1>🪑 הספסל</h1></header>
-      <MapView
-        items={[...items.values()]}
-        me={me}
-        recenter={recenter}
-        pick={pick}
-        onPickMove={setPick}
-        onSelect={(id) => { setPick(null); setSelectedId(id); }}
-        onBounds={onBounds}
-      />
-      <button className="fab-locate" onClick={() => (me ? setRecenter((n) => n + 1) : setToast("מחפשים מיקום..."))} aria-label="המיקום שלי">📍</button>
-      {!pick && !selected && <button className="fab-add" onClick={startAdd}>＋ פרסום פריט</button>}
-      {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
-      {pick && <AddSheet onSubmit={publish} onClose={() => setPick(null)} onError={setToast} />}
+      <Navbar />
+      <div className={`stage${selected || pick ? " has-sheet" : ""}`}>
+        <div className="map-area">
+          <MapView
+            items={[...items.values()]}
+            me={me}
+            recenter={recenter}
+            pick={pick}
+            selectedId={selectedId}
+            onPickMove={setPick}
+            onSelect={(id) => { setPick(null); setSelectedId(id); }}
+            onBounds={onBounds}
+          />
+          <FloatingMenu
+            showAdd={!pick}
+            onAdd={startAdd}
+            onRecenter={() => (me ? setRecenter((n) => n + 1) : setToast("מחפשים מיקום..."))}
+          />
+        </div>
+        {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
+        {pick && <AddSheet onSubmit={publish} onClose={() => setPick(null)} onError={setToast} />}
+      </div>
       {toast && <div className="toast">{toast}</div>}
     </div>
   );

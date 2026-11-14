@@ -1,27 +1,91 @@
+/* גופן ראשי: Varela Round (רישיון OFL, ראו src/assets/fonts/OFL.txt). משקל אחד בלבד, ולכן ההיררכיה בגודל ובצבע. */
+@font-face {
+  font-family: "Varela Round";
+  src: url("./assets/fonts/VarelaRound-Regular.ttf") format("truetype");
+  font-weight: 400;
+  font-display: swap;
+}
+
+:root {
+  --paper: #fff7ea;
+  --cream: #ffefd6;
+  --peach: #f8c3ae;
+  --butter: #f9e3a0;
+  --sage: #bfdcb8;
+  --sky: #bee1e6;
+  --lilac: #dccfea;
+  --ink: #3b4a52;
+  --ink-soft: #6b7b82;
+  --line: 2px solid var(--ink);
+  --shadow: 2px 2px 0 var(--ink);
+  --shadow-lg: 4px 4px 0 var(--ink);
+  --panel-w: 380px;
+  --nav-h: 60px;
+}
+
 * { box-sizing: border-box; }
-html, body, #root { margin: 0; height: 100%; font-family: system-ui, -apple-system, "Segoe UI", Arial, sans-serif; }
+html, body, #root { margin: 0; height: 100%; }
+body { font-family: "Varela Round", system-ui, "Segoe UI", Arial, sans-serif; font-synthesis: none; color: var(--ink); background: var(--paper); line-height: 1.5; }
+button, textarea, input { font-family: inherit; color: inherit; }
+h1, h2, h3 { font-weight: 400; margin: 0; }
+:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- מבנה האפליקציה ---------- */
 .app { height: 100%; display: flex; flex-direction: column; position: relative; }
-header { background: #16a34a; color: #fff; padding: calc(8px + env(safe-area-inset-top)) 14px 8px; z-index: 500; }
-header h1 { margin: 0; font-size: 20px; }
-.map { flex: 1; width: 100%; }
+.stage { flex: 1; min-height: 0; position: relative; display: flex; }
+.map-area { flex: 1; min-width: 0; position: relative; }
+.map { position: absolute; inset: 0; }
+/* ריכוך הצבעים של האריחים כדי שיתאימו לפלטה הפסטלית */
+.leaflet-tile-pane { filter: saturate(.7) sepia(.14) brightness(1.04) contrast(.96); }
 
-.fab-add, .fab-locate { position: fixed; z-index: 600; border: 0; box-shadow: 0 2px 10px rgba(0,0,0,.3); cursor: pointer; }
-.fab-add { bottom: calc(20px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%); background: #16a34a; color: #fff; font-size: 17px; font-weight: 600; padding: 14px 24px; border-radius: 999px; }
-.fab-locate { top: 70px; left: 12px; width: 48px; height: 48px; border-radius: 50%; background: #fff; font-size: 22px; }
+/* ---------- סרגל עליון ---------- */
+.navbar { display: flex; align-items: center; gap: 12px; height: var(--nav-h); padding: 6px 14px; padding-top: calc(6px + env(safe-area-inset-top)); background: var(--cream); border-bottom: var(--line); z-index: 800; flex-shrink: 0; }
+.navbar .logo { display: block; height: 100%; width: auto; }
+.navbar .spacer { flex: 1; }
 
-.sheet { position: fixed; z-index: 1000; left: 0; right: 0; bottom: 0; background: #fff; border-radius: 18px 18px 0 0; padding: 16px 16px calc(16px + env(safe-area-inset-bottom)); box-shadow: 0 -4px 20px rgba(0,0,0,.25); max-height: 60vh; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
-.sheet h2 { margin: 0; font-size: 18px; }
-.sheet img { width: 100%; max-height: 30vh; object-fit: cover; border-radius: 12px; }
+/* ---------- כפתורים ---------- */
+.btn { color: var(--ink); display: inline-flex; align-items: center; justify-content: center; gap: 6px; flex: 1; text-align: center; text-decoration: none; padding: 11px 18px; border-radius: 999px; border: var(--line); background: var(--peach); box-shadow: var(--shadow); font-size: 16px; cursor: pointer; }
+.btn:active { transform: translate(2px, 2px); box-shadow: none; }
+.btn.secondary { background: var(--sage); }
+.btn.primary { background: var(--peach); }
+.btn:disabled { opacity: .5; cursor: default; }
+.pill { display: inline-flex; align-items: center; border: var(--line); border-radius: 999px; padding: 5px 14px; background: var(--lilac); text-decoration: none; font-size: 15px; white-space: nowrap; cursor: pointer; }
+
+/* ---------- תפריט צף ---------- */
+.fabs { position: absolute; z-index: 600; inset-inline-end: 14px; bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.fab { display: inline-flex; align-items: center; gap: 8px; height: 50px; min-width: 50px; padding: 0 14px; justify-content: center; border: var(--line); border-radius: 999px; background: var(--sky); box-shadow: var(--shadow); font-size: 16px; cursor: pointer; }
+.fab.add { background: var(--peach); padding: 0 18px; }
+.fab:active { transform: translate(2px, 2px); box-shadow: none; }
+.fab .ico { font-size: 22px; line-height: 1; }
+
+/* ---------- גיליון פרטים: תחתון במובייל, פאנל צד בדסקטופ ---------- */
+.sheet { position: absolute; z-index: 1000; inset-inline: 0; bottom: 0; background: var(--paper); border-top: var(--line); border-radius: 22px 22px 0 0; padding: 18px 16px calc(16px + env(safe-area-inset-bottom)); max-height: 62%; overflow: auto; display: flex; flex-direction: column; gap: 10px; }
+.sheet h2 { font-size: 22px; line-height: 1.2; }
+.sheet img { flex-shrink: 0; width: 100%; max-height: 30vh; object-fit: cover; border: var(--line); border-radius: 14px; background: var(--butter); }
 .sheet p { margin: 0; font-size: 16px; }
-.sheet .meta { color: #666; font-size: 13px; }
-.close { position: absolute; top: 8px; left: 8px; background: #eee; border: 0; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer; }
-textarea { width: 100%; font: inherit; padding: 10px; border: 1px solid #ccc; border-radius: 10px; resize: none; }
-.row { display: flex; gap: 10px; }
-.btn { flex: 1; text-align: center; text-decoration: none; padding: 13px; border-radius: 12px; border: 0; font-size: 16px; font-weight: 600; cursor: pointer; }
-.btn.primary { background: #16a34a; color: #fff; }
-.btn.secondary { background: #e8f5ec; color: #14532d; }
-.btn:disabled { opacity: .5; }
+.sheet .meta { color: var(--ink-soft); font-size: 14px; }
+.sheet textarea { width: 100%; padding: 10px; border: var(--line); border-radius: 14px; background: #fff; resize: none; font-size: 16px; }
+.sheet .row { display: flex; gap: 10px; }
+.close { position: absolute; top: 10px; inset-inline-start: 10px; width: 36px; height: 36px; border-radius: 50%; border: var(--line); background: #fff; font-size: 15px; cursor: pointer; display: grid; place-items: center; }
 
-.toast { position: fixed; z-index: 2000; top: 70px; left: 50%; transform: translateX(-50%); background: #222; color: #fff; padding: 10px 16px; border-radius: 10px; font-size: 15px; max-width: 90%; }
-.pin { font-size: 28px; line-height: 1; filter: drop-shadow(0 2px 2px rgba(0,0,0,.4)); }
-.me { width: 16px; height: 16px; background: #2563eb; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 4px rgba(37,99,235,.25); }
+/* במובייל התפריט הצף מוסתר בזמן שגיליון פתוח (הוא היה מוסתר מאחוריו) */
+@media (max-width: 899px) {
+  .stage.has-sheet .fabs { display: none; }
+}
+
+/* ---------- דסקטופ: הפאנל נפתח לצד המפה ---------- */
+@media (min-width: 900px) {
+  :root { --nav-h: 68px; }
+  .sheet { position: relative; inset: auto; flex: 0 0 var(--panel-w); width: var(--panel-w); max-height: none; border-top: 0; border-radius: 0; border-inline-end: var(--line); padding: 22px 20px; order: -1; gap: 14px; }
+  .sheet img { max-height: 280px; }
+  .sheet h2 { font-size: 26px; padding-inline-end: 44px; }
+  .close { top: 16px; }
+}
+
+/* ---------- הודעות וסמנים ---------- */
+.toast { position: fixed; z-index: 2000; top: calc(var(--nav-h) + 12px); left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-size: 15px; max-width: 90%; box-shadow: var(--shadow); }
+.pin { width: 34px; height: 34px; border-radius: 50%; background: var(--butter); border: var(--line); box-shadow: var(--shadow); display: grid; place-items: center; font-size: 17px; line-height: 1; transition: transform .15s; }
+.pin.sel { background: var(--peach); transform: scale(1.25); }
+.me { width: 16px; height: 16px; background: #5aa7d8; border: 3px solid #fff; border-radius: 50%; box-shadow: 0 0 0 6px rgba(90, 167, 216, .3); }
+.leaflet-container { font-family: inherit; }

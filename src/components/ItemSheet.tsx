@@ -19,7 +19,7 @@ export default function ItemSheet({ item, me, onTook, onClose }: Props) {
     <div className="sheet">
       <button className="close" onClick={onClose} aria-label="סגירה">✕</button>
       <img src={item.photo_url} alt="תמונת הפריט" />
-      <p>{item.description || "ללא תיאור"}</p>
+      <h2>{item.description || "ללא תיאור"}</h2>
       <p className="meta">פורסם {when}{d}</p>
       <div className="row">
         <a
