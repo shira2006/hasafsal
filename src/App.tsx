@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import MapView from "./components/MapView";
 import ItemSheet from "./components/ItemSheet";
 import AddSheet from "./components/AddSheet";
@@ -16,27 +16,50 @@ export default function App() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [pick, setPick] = useState<LatLng | null>(null);
   const [recenter, setRecenter] = useState(0);
+  const [refreshKey, setRefreshKey] = useState(0);
+  const boundsRef = useRef<Bounds | null>(null);
+  boundsRef.current = bounds;
 
-  // טעינת פריטים לפי האזור שמוצג במפה
+  // טעינת פריטים לפי האזור שמוצג במפה. הטעינה מחליפה את הרשימה, כך שפריטים שנלקחו בזמן שהאפליקציה
+  // הייתה ברקע נעלמים, ופריטים רחוקים לא נשארים בזיכרון.
   useEffect(() => {
     if (!bounds) return;
     const t = setTimeout(async () => {
       try {
         const list = await fetchItemsInBounds(bounds);
-        setItems((prev) => { const m = new Map(prev); list.forEach((i) => m.set(i.id, i)); return m; });
+        setItems(new Map(list.map((i) => [i.id, i])));
       } catch (e) { setToast("שגיאה בטעינה: " + errText(e)); }
     }, 300);
     return () => clearTimeout(t);
-  }, [bounds, setToast]);
+  }, [bounds, refreshKey, setToast]);
 
-  // עדכונים בזמן אמת: פריט שנלקח נעלם מיד אצל כולם
-  useEffect(() => subscribeItems(
-    (i) => setItems((p) => new Map(p).set(i.id, i)),
-    (id) => {
-      setItems((p) => { const m = new Map(p); m.delete(id); return m; });
-      setSelectedId((cur) => (cur === id ? null : cur));
-    }
-  ), []);
+  // Realtime: מחוברים רק כשהאפליקציה מוצגת על המסך (חוסך חיבורים מהמגבלה של 200),
+  // ומתעלמים מפריטים חדשים שמחוץ לאזור שמוצג. בחזרה לחזית טוענים מחדש.
+  useEffect(() => {
+    let unsub: (() => void) | null = null;
+    const start = () => {
+      if (unsub) return;
+      unsub = subscribeItems(
+        (i) => {
+          const b = boundsRef.current;
+          if (b && (i.lat < b.south || i.lat > b.north || i.lng < b.west || i.lng > b.east)) return;
+          setItems((p) => new Map(p).set(i.id, i));
+        },
+        (id) => {
+          setItems((p) => { const m = new Map(p); m.delete(id); return m; });
+          setSelectedId((cur) => (cur === id ? null : cur));
+        }
+      );
+    };
+    const stop = () => { unsub?.(); unsub = null; };
+    const onVis = () => {
+      if (document.visibilityState === "visible") { start(); setRefreshKey((k) => k + 1); }
+      else stop();
+    };
+    if (document.visibilityState === "visible") start();
+    document.addEventListener("visibilitychange", onVis);
+    return () => { document.removeEventListener("visibilitychange", onVis); stop(); };
+  }, []);
 
   const onBounds = useCallback((b: Bounds) => setBounds(b), []);
   const selected = selectedId ? items.get(selectedId) ?? null : null;
