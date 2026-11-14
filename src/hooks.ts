@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 export type LatLng = [number, number];
 
@@ -33,6 +33,22 @@ export function useDelayedFlag(flag: boolean, ms = 400) {
     return () => clearTimeout(t);
   }, [flag, ms]);
   return shown;
+}
+
+/** true כשהדגל דלוק, ואחרי שנכבה נשאר true עד שעברו לפחות minMs מאז שהופיע (כדי שאנימציה תספיק להסתיים). */
+export function useMinVisible(flag: boolean, minMs: number) {
+  const [visible, setVisible] = useState(false);
+  const shownAt = useRef(0);
+  useEffect(() => {
+    if (flag) {
+      if (!visible) { shownAt.current = Date.now(); setVisible(true); }
+      return;
+    }
+    if (!visible) return;
+    const t = setTimeout(() => setVisible(false), Math.max(0, minMs - (Date.now() - shownAt.current)));
+    return () => clearTimeout(t);
+  }, [flag, minMs, visible]);
+  return visible;
 }
 
 export type View = "map" | "about";
