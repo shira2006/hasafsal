@@ -23,3 +23,7 @@ file_size_limit = "10MiB"
 [studio]
 enabled = true
 port = 54323
+
+# מכבים אנליטיקה/לוגים מקומיים (Logflare): נכשל ב-Windows ולא נחוץ לפיתוח
+[analytics]
+enabled = false

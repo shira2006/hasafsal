@@ -36,6 +36,7 @@ npm run dev             # http://localhost:5173/hasafsal/
 - Studio (ממשק למסד הנתונים): http://127.0.0.1:54323
 - איפוס מסד מקומי לפי המיגרציות והדמו: `npm run db:reset`
 - עצירה: `npm run db:stop`
+- אם `db:start` נכשל עם `analytics ... unhealthy` (נפוץ ב-Windows): ודאו שב-`supabase/config.toml` יש `[analytics] enabled = false`
 
 ## תהליך עבודה
 1. עובדים בענפים שיוצאים מ-`dev`, ופותחים PR ל-`dev`.
