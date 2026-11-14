@@ -15,19 +15,12 @@ interface Props {
   onClose: () => void;
 }
 
-const PHOTO_TIMEOUT_MS = 8000;
-
 /** תמונת הפריט. הקשה עליה פותחת אותה בגדול. בלי תמונה (או אם היא לא נטענת): ציור הספסל שלנו והודעה. */
 function ItemPhoto({ item }: { item: Item }) {
   const [broken, setBroken] = useState(false);
   const [loaded, setLoaded] = useState(false);
   const [open, setOpen] = useState(false);
-  // אם התמונה לא נטענת תוך כמה שניות (שרת איטי, קישור שבור), לא מסתובבים לנצח: מציגים "אין תמונה" כמו בפריט בלי תמונה
-  useEffect(() => {
-    if (!item.photo_url || loaded || broken) return;
-    const t = setTimeout(() => setBroken(true), PHOTO_TIMEOUT_MS);
-    return () => clearTimeout(t);
-  }, [item.photo_url, loaded, broken]);
+  // בלי תמונה: מציגים מיד את הספסל וההודעה, בלי מציין טעינה. מציין טעינה רק בזמן שתמונה אמיתית נטענת.
   if (!item.photo_url || broken) {
     return (
       <div className="no-photo">

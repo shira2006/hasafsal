@@ -64,7 +64,7 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 /* צבעי כפתורים מהפלטה: ירוק (פעולה חיובית), צהוב (עזר), אדום (הסרה / "זה לא כאן") */
 .btn.green { background: var(--sage); }
 .btn.yellow { background: var(--butter); }
-.btn.red { background: var(--pink); }
+.btn.red { background: var(--peach); } /* אותו צבע כמו כפתור הפלוס והלשונית הפעילה */
 .btn.primary { background: var(--peach); }
 .btn.small { flex: 0 0 auto; padding: 7px 16px; font-size: 15px; }
 .btn:disabled { opacity: .45; cursor: default; }
@@ -209,12 +209,6 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .photo-modal-close { position: absolute; top: calc(12px + env(safe-area-inset-top)); inset-inline-start: 12px; }
 .sheet .photo-wrap img.photo { position: absolute; inset: 0; width: 100%; height: 100%; max-height: none; aspect-ratio: auto; object-fit: cover; border: 0; border-radius: 0; opacity: 0; transition: opacity .25s; }
 .photo-wrap.loaded img.photo { opacity: 1; }
-/* כרטיס שגיאה (למשל כשלא הצלחנו לטעון את הספסלים) */
-.error-card { position: absolute; z-index: 650; top: 12px; left: 50%; transform: translateX(-50%); width: min(92%, 340px); display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 14px 16px; text-align: center; background: #fff; border: var(--line); border-radius: var(--radius); box-shadow: var(--float); }
-.error-card img { height: 54px; width: auto; }
-.error-card h3 { font-size: 18px; }
-.error-card p { margin: 0; font-size: 15px; color: var(--ink-soft); }
-.error-card .btn { margin-top: 4px; }
 
 /* מסך תקלה לא צפויה */
 .crash { min-height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 24px; text-align: center; background: var(--paper); }

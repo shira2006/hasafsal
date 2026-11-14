@@ -8,7 +8,6 @@ import AboutPage from "./components/AboutPage";
 import { useToasts } from "./components/Toasts";
 import { friendlyError } from "./lib/errors";
 import BenchLoader from "./components/BenchLoader";
-import ErrorCard from "./components/ErrorCard";
 import { useDelayedFlag, useGeolocation, useView, type LatLng } from "./hooks";
 import { createItem, fetchItemsInBounds, removeItem, subscribeItems } from "./lib/items";
 import { geocode, reverseGeocode } from "./lib/geocode";
@@ -34,7 +33,6 @@ export default function App() {
   const [recenter, setRecenter] = useState(0);
   const [refreshKey, setRefreshKey] = useState(0);
   const [loadingItems, setLoadingItems] = useState(false);
-  const [loadError, setLoadError] = useState(false); // לא הצלחנו לטעון את הספסלים
   const [lookingUp, setLookingUp] = useState(false); // מחפשים כתובת למיקום הנבחר
   const showLoading = useDelayedFlag(loadingItems, 400);
   const boundsRef = useRef<Bounds | null>(null);
@@ -54,17 +52,15 @@ export default function App() {
         const list = await fetchItemsInBounds(bounds);
         if (cancelled) return;
         setItems(new Map(list.map((i) => [i.id, i])));
-        setLoadError(false);
         setLoadingItems(false);
       } catch (e) {
         if (cancelled) return;
-        console.error(e);
-        setLoadError(true);
         setLoadingItems(false);
+        toast.error(friendlyError(e, "לא הצלחנו לטעון את הספסלים"));
       }
     }, 300);
     return () => { cancelled = true; clearTimeout(t); };
-  }, [bounds, refreshKey]);
+  }, [bounds, refreshKey, toast]);
 
   // מתריעים כשהחיבור נופל, ובחזרתו טוענים מחדש
   useEffect(() => {
@@ -228,16 +224,9 @@ export default function App() {
             onAdd={startAdd}
             onRecenter={() => (me ? setRecenter((n) => n + 1) : toast.info("מחפשים מיקום..."))}
           />
-          {/* טעינת ספסלים: מציין קטן (רק אם הטעינה מתארכת), ואם נכשלה: כרטיס שגיאה עם ניסיון חוזר */}
-          {showLoading && !loadError && (
+          {/* טעינת ספסלים: מציין קטן בראש המפה בזמן הטעינה (אם נכשלה, מוצגת התראת שגיאה) */}
+          {showLoading && (
             <div className="map-status"><BenchLoader size={26} label="טוענים ספסלים..." showLabel /></div>
-          )}
-          {loadError && (
-            <ErrorCard
-              title="לא הצלחנו לטעון את הספסלים"
-              text="בדקו את החיבור ונסו שוב"
-              onRetry={() => { setLoadError(false); setRefreshKey((k) => k + 1); }}
-            />
           )}
           {dragging && (
             <div className="drag-bar" role="status">

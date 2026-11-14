@@ -8,7 +8,7 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - Add flow ("מצאת ספסל?"): photo (optional), one description (items + where exactly), location (default current location; type an address, or choose on the map). A photo or a description is required.
 - "הצעות לחידושים" page (`#/about`; navbar tab + page title) with a short story and a suggestions form (stored in the `suggestions` table in Supabase, no email/notification; readable only in Supabase Studio, not through the public API).
 - Item view also has "זה לא כאן" (drawn sad-face SVG) next to "לקחתי": removes the item for everyone, like "לקחתי", with a different message.
-- Add flow has ONE photo button ("הוספת תמונה", camera icon, no `capture`): the phone shows its own camera/gallery chooser. Item photos that do not load within 8s fall back to the "no photo" note.
+- Add flow has ONE photo button ("הוספת תמונה", camera icon, no `capture`): the phone shows its own camera/gallery chooser. Loader shows only while a real photo is loading; no photo = bench drawing + note immediately.
 - PWA/install look: manifest + `<meta theme-color>` use the cream colour (#ffefd6); icons in `public/icons` are generated from the logo with `tools/make-icons.cjs` (not part of the build). `index.html` contains an inline bench-drawing loader shown until React mounts (replaced by the app).
 - All UI text is Hebrew, RTL. Tone: friendly, neighbourly. No emoji as UI icons (use SVG).
 
@@ -27,7 +27,7 @@ Hebrew, right-to-left, map-based mobile + desktop web app (PWA, installable) for
 - Logo: `src/assets/logo.svg` (pencil bench with the word). Generic bench drawing: `src/assets/bench-generic.svg`.
 - Responsive: mobile = bottom sheet over the map; desktop (>=900px) = side panel next to the map. Compact rules at `max-height: 700px` so item sheet needs no scrollbar.
 - Notifications: `useToasts()` (success/error/info) from `components/Toasts.tsx`. Show user errors through `friendlyError()` (Hebrew, never raw technical text).
-- Loading: `BenchLoader` (bench drawn stroke by stroke). Errors: `ErrorCard` (retry) and `ErrorBoundary` (crash screen).
+- Loading: `BenchLoader` (bench drawn stroke by stroke). Errors: `ErrorBoundary` (crash screen); failed loads/actions use friendly toasts.
 - Add the dark outline to cards, none on photos/images. Keep it minimal and avoid a different colour per block.
 
 ## Environments
