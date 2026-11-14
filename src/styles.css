@@ -85,6 +85,7 @@ input:focus-visible, textarea:focus-visible { outline: none; box-shadow: inset 0
 .fabs { position: absolute; z-index: 600; inset-inline-end: 14px; bottom: calc(18px + env(safe-area-inset-bottom)); display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
 .fab { display: grid; place-items: center; width: 50px; height: 50px; padding: 0; border: var(--line); border-radius: 50%; background: #fff; color: var(--ink); box-shadow: var(--float); cursor: pointer; }
 .fab.add { background: var(--peach); }
+.fab.heart { color: var(--pink); }
 .fab:active { filter: brightness(.95); }
 
 /* ---------- גיליון פרטים: תחתון במובייל, פאנל צד בדסקטופ ---------- */

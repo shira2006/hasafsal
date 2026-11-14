@@ -1,5 +1,6 @@
 import { BUCKET, supabase } from "./supabase";
 import type { Bounds, Item } from "../types";
+import { distanceMeters } from "./geo";
 
 /** טוען רק פריטים שנמצאים באזור שמוצג במפה. */
 export async function fetchItemsInBounds(b: Bounds): Promise<Item[]> {
@@ -33,6 +34,27 @@ export async function createItem(p: { blob: Blob | null; description: string; ad
     throw error;
   }
   return data.id as string;
+}
+
+/**
+ * הספסל הקרוב ביותר לנקודה, גם אם הוא רחוק מהמפה שמוצגת. מחפשים ברדיוס שמתרחב (1, 5, 20, 100, 500 ק"מ)
+ * ומחזירים את הקרוב ביותר שנמצא. null אם אין בכלל ספסלים באזור.
+ */
+export async function fetchNearestItem(lat: number, lng: number): Promise<{ item: Item; meters: number } | null> {
+  for (const km of [1, 5, 20, 100, 500]) {
+    const dLat = km / 111;
+    const dLng = km / (111 * Math.max(Math.cos((lat * Math.PI) / 180), 0.2));
+    const list = await fetchItemsInBounds({ south: lat - dLat, north: lat + dLat, west: lng - dLng, east: lng + dLng });
+    if (list.length === 0) continue;
+    let best = list[0], bestM = distanceMeters([lat, lng], [best.lat, best.lng]);
+    for (const i of list) {
+      const m = distanceMeters([lat, lng], [i.lat, i.lng]);
+      if (m < bestM) { best = i; bestM = m; }
+    }
+    // התיבה היא ריבוע: ספסל בפינה עשוי להיות רחוק מהרדיוס, לכן מקבלים רק מי שבתוך הרדיוס (או את הקרוב בסבב האחרון)
+    if (bestM <= km * 1000 || km === 500) return { item: best, meters: bestM };
+  }
+  return null;
 }
 
 /** טוען ספסל בודד לפי מזהה (לקישור שיתוף). null אם כבר לא קיים. */
