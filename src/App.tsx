@@ -87,7 +87,8 @@ export default function App() {
   async function publish(p: { blob: Blob | null; description: string; locationNote: string }) {
     if (!pick) return;
     try {
-      await createItem({ ...p, lat: pick[0], lng: pick[1] });
+      // שומרים את הכתובת רק אם כבר זוהתה (לא את הטקסט הכללי "המיקום הנוכחי")
+      await createItem({ ...p, address: pickAddress, lat: pick[0], lng: pick[1] });
       closeAdd();
       setToast("תודה! הפריט עלה למפה");
     } catch (e) { setToast("שגיאה בפרסום: " + errText(e)); }

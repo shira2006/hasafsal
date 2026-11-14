@@ -6,6 +6,7 @@ export interface Item {
   photo_url: string | null;
   photo_path: string | null;
   location_note: string | null;
+  address: string | null;
   created_at: string;
 }
 
