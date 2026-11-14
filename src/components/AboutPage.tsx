@@ -31,7 +31,7 @@ export default function AboutPage() {
   return (
     <article className="page">
       <div className="page-inner">
-        <h1>הצעות לחידושים</h1>
+        <h1>עוד על הספסל</h1>
 
         <p>
           הכול התחיל מספסל אחד, ממש מתחת לבית שלי. אני תמיד מניחה עליו דברים והוא תמיד מחזיר בחזרה.

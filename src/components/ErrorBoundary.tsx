@@ -17,7 +17,7 @@ export default class ErrorBoundary extends Component<{ children: ReactNode }, St
       <main className="crash" role="alert">
         <img src={bench} alt="" />
         <h1>אופס, משהו השתבש</h1>
-        <p>קרתה לנו תקלה. אפשר לנסות לרענן את הדף, ואם זה חוזר, ספרו לנו דרך "הצעות לחידושים".</p>
+        <p>קרתה לנו תקלה. אפשר לנסות לרענן את הדף, ואם זה חוזר, ספרו לנו דרך "עוד על הספסל".</p>
         <button type="button" className="btn" onClick={() => location.reload()}>רענון הדף</button>
       </main>
     );
