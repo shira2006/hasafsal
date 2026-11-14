@@ -188,6 +188,7 @@ export default function App() {
         {selected && <ItemSheet item={selected} me={me} onTook={took} onClose={() => setSelectedId(null)} />}
         {pick && (
           <AddSheet
+            debugInfo={`pin ${pick[0].toFixed(5)}, ${pick[1].toFixed(5)} | gps ${me ? `${me[0].toFixed(5)}, ${me[1].toFixed(5)}` : "none"} ±${Math.round(meAccuracy ?? 0)}m | source: ${pickSource}`}
             locationLabel={pickLabel}
             isCurrent={pickSource === "current"}
             canUseMyLocation={!!me}

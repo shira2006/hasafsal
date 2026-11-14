@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { shrinkImage } from "../lib/image";
 
 interface Props {
+  debugInfo?: string; // לפיתוח בלבד: קואורדינטות, דיוק ומקור המיקום
   locationLabel: string;
   isCurrent: boolean;
   canUseMyLocation: boolean;
@@ -13,7 +14,7 @@ interface Props {
   onError: (msg: string) => void;
 }
 
-export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
+export default function AddSheet({ debugInfo, locationLabel, isCurrent, canUseMyLocation, onSubmit, onSearch, onUseMyLocation, onStartDrag, onClose, onError }: Props) {
   const [blob, setBlob] = useState<Blob | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [description, setDescription] = useState("");
@@ -116,6 +117,7 @@ export default function AddSheet({ locationLabel, isCurrent, canUseMyLocation, o
             onChange={(e) => setLocationNote(e.target.value)}
           />
         </div>
+        {import.meta.env.DEV && debugInfo && <p className="hint" dir="ltr">dev: {debugInfo}</p>}
         {notFound && <p className="hint err">לא מצאנו את הכתובת. אפשר לנסח אחרת, או לבחור על המפה.</p>}
       </div>
 
